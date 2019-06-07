@@ -1,0 +1,61 @@
+{
+  "name": "orbit-server",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "description": "A server interface for Orbit sources.",
+  "contributors": [
+    "Paul Chavard <github@paul.chavard.net>"
+  ],
+  "keywords": [
+    "orbit"
+  ],
+  "repository": "https://github.com/tchak/orbit-server",
+  "license": "MIT",
+  "dependencies": {
+    "@orbit/data": "^0.16.0-beta.7",
+    "@orbit/jsonapi": "^0.16.0-beta.7",
+    "@orbit/memory": "^0.16.0-beta.7",
+    "apollo-server-fastify": "^2.6.2",
+    "dataloader": "^1.4.0",
+    "fastify": "^2.4.1",
+    "fastify-cors": "^2.1.3",
+    "fastify-helmet": "^3.0.0",
+    "fastify-plugin": "^1.6.0",
+    "fastify-websocket": "^0.5.0",
+    "graphql": "^14.3.1",
+    "graphql-subscriptions": "^1.1.0",
+    "inflected": "^2.0.4",
+    "rxjs": "^6.5.2"
+  },
+  "scripts": {
+    "start": "yarn serve",
+    "build": "yarn build-ts && yarn lint:ts",
+    "serve": "node dist/server.js",
+    "watch-node": "nodemon dist/server.js",
+    "watch": "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"cyan.bold,green.bold\" \"yarn watch-ts\" \"yarn watch-node\"",
+    "build-ts": "tsc",
+    "watch-ts": "tsc -w",
+    "eslint": "eslint .",
+    "debug": "yarn build && yarn watch-debug",
+    "serve-debug": "nodemon --inspect dist/server.js",
+    "test": "yarn lint:ts && qunit --require ts-node/register 'test/**/*-test.ts'",
+    "lint:ts": "eslint . --ext .ts"
+  },
+  "devDependencies": {
+    "@types/graphql": "^14.2.0",
+    "@types/inflected": "^1.1.29",
+    "@types/node": "^12.0.7",
+    "@types/qunit": "^2.9.0",
+    "@typescript-eslint/eslint-plugin": "^1.9.0",
+    "@typescript-eslint/parser": "^1.9.0",
+    "concurrently": "^4.1.0",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^4.3.0",
+    "eslint-plugin-prettier": "^3.1.0",
+    "nodemon": "^1.19.1",
+    "prettier": "^1.18.2",
+    "qunit": "^2.9.2",
+    "ts-node": "^8.2.0",
+    "typescript": "^3.5.0"
+  }
+}
