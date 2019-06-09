@@ -15,7 +15,6 @@ import {
   handleAddToRelatedRecords,
   handleRemoveFromRelatedRecords,
   handleOperations,
-  handleWebSocket,
   handleReplaceRelatedRecords,
   handleReplaceRelatedRecord
 } from './handlers';
@@ -25,10 +24,6 @@ interface RouteDefinition {
   url: string;
   config: Config;
   handler: Handler;
-}
-
-interface WebsocketRouteDefinition extends RouteDefinition {
-  wsHandler?: (connection: any, req: Request) => void;
 }
 
 interface RouteConfig {
@@ -136,19 +131,4 @@ function buildJSONAPIResource(
   });
 
   return routes;
-}
-
-function buildJSONAPIOperations(config: RouteConfig): WebsocketRouteDefinition {
-  const route: WebsocketRouteDefinition = {
-    method: 'GET',
-    url: '/operations',
-    config: { ...config, type: 'operations' },
-    handler: handleOperations
-  };
-
-  if (config.pubsub) {
-    route.wsHandler = handleWebSocket(config.pubsub, config.serializer);
-  }
-
-  return route;
 }
