@@ -2,6 +2,7 @@
   "name": "orbit-server",
   "version": "0.1.0",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "description": "A server interface for Orbit sources",
   "contributors": [
     "Paul Chavard <github@paul.chavard.net>"
@@ -29,7 +30,7 @@
     "rxjs": "^6.5.2"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf ./dist && tsc",
     "test": "qunit --require ts-node/register 'test/**/*-test.ts'",
     "lint": "eslint . --ext .ts"
   },
