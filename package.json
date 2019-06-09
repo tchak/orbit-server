@@ -14,9 +14,9 @@
   "repository": "https://github.com/tchak/orbit-server",
   "license": "MIT",
   "dependencies": {
-    "@orbit/data": "^0.16.0-beta.7",
-    "@orbit/jsonapi": "^0.16.0-beta.7",
-    "@orbit/record-cache": "^0.16.0-beta.7",
+    "@orbit/data": "^0.16.0-beta.8",
+    "@orbit/jsonapi": "^0.16.0-beta.8",
+    "@orbit/record-cache": "^0.16.0-beta.8",
     "apollo-server-fastify": "^2.6.2",
     "dataloader": "^1.4.0",
     "fastify": "^2.4.1",
@@ -37,7 +37,7 @@
     "prepare": "yarn build"
   },
   "devDependencies": {
-    "@orbit/memory": "^0.16.0-beta.7",
+    "@orbit/memory": "^0.16.0-beta.8",
     "@types/graphql": "^14.2.0",
     "@types/inflected": "^1.1.29",
     "@types/node": "^12.0.7",

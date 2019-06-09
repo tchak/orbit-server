@@ -38,65 +38,65 @@
     core-js "^2.6.5"
     regenerator-runtime "^0.13.2"
 
-"@orbit/core@^0.16.0-beta.7":
-  version "0.16.0-beta.7"
-  resolved "https://registry.yarnpkg.com/@orbit/core/-/core-0.16.0-beta.7.tgz#b0f67a703ae5de7358ecf801c9ddd2851a036e09"
-  integrity sha512-opzyWqeEM8WG/vrvhtKOTMNA5kV5s4ZjFOAABZrbUace2kKl0u1EscemgDg41bXqbPAWsB8CXYiTlz1AwimHbQ==
+"@orbit/core@^0.16.0-beta.8":
+  version "0.16.0-beta.8"
+  resolved "https://registry.yarnpkg.com/@orbit/core/-/core-0.16.0-beta.8.tgz#7296f524efc864f270988c62f0ba46fb2b3fa7ae"
+  integrity sha512-rM9NdNCmid4IVzvIss1Uoq2s4udHMPGqI8CIXrLYpbFpdDQmPAxdy2QO9mnrx0gA17oQr1KCAtDBDBa1n83PdA==
   dependencies:
-    "@orbit/utils" "^0.16.0-beta.7"
+    "@orbit/utils" "^0.16.0-beta.8"
 
-"@orbit/data@^0.16.0-beta.7":
-  version "0.16.0-beta.7"
-  resolved "https://registry.yarnpkg.com/@orbit/data/-/data-0.16.0-beta.7.tgz#f215e31b70004a869ee98ba93e78f33dd6bef8e6"
-  integrity sha512-c38wCY0CerVULkuEhxifIuB14EbwX/iLHMGPmo69LUsayiXg51Jqx5NH/Mm+uBrnN4EXlgdvTWr+ScncgLUg3A==
+"@orbit/data@^0.16.0-beta.8":
+  version "0.16.0-beta.8"
+  resolved "https://registry.yarnpkg.com/@orbit/data/-/data-0.16.0-beta.8.tgz#1b7bae4d13020a9620a19347d0ff9c5fdd584915"
+  integrity sha512-U9l4j+pQPjPg4AQpDYO6nggRBUySspuVLm/beo705Bk+twbqfqCZ/4257BNuU+qtPciQTpTTrXy3aQweCj2MAQ==
   dependencies:
-    "@orbit/core" "^0.16.0-beta.7"
-    "@orbit/utils" "^0.16.0-beta.7"
+    "@orbit/core" "^0.16.0-beta.8"
+    "@orbit/utils" "^0.16.0-beta.8"
 
-"@orbit/immutable@^0.16.0-beta.7":
-  version "0.16.0-beta.7"
-  resolved "https://registry.yarnpkg.com/@orbit/immutable/-/immutable-0.16.0-beta.7.tgz#836f18ea587cc776730597f257ca7e383ef37f56"
-  integrity sha512-+KCSGKedPa7f2QPr35CdSzSVVvtLA76YSUb8HvidmiYEruE8zoAU03a5o6NNrLCg/MRmP9xdYnfamVz5egLf8A==
+"@orbit/immutable@^0.16.0-beta.8":
+  version "0.16.0-beta.8"
+  resolved "https://registry.yarnpkg.com/@orbit/immutable/-/immutable-0.16.0-beta.8.tgz#14efc6c28ee4ccc704f31be309225bfd1aa2a4d1"
+  integrity sha512-AIn2YhQwnN5hxeCPqjKxi2q4f56IjHhorHT7t/75MbM/HND88NOd1nnZ1YausWB9NZcASuKN9KzteEHfG1lhGA==
 
-"@orbit/jsonapi@^0.16.0-beta.7":
-  version "0.16.0-beta.7"
-  resolved "https://registry.yarnpkg.com/@orbit/jsonapi/-/jsonapi-0.16.0-beta.7.tgz#9611b77c65a65e1a5a4dcbd90764af72cc3fbc88"
-  integrity sha512-ypn3aP1JTP7vYumwiB4RYkV98UeZDBkP0XviOa9a7/ZV5tS6OSgNWUX1oSIavgm2cApiav7dNigCDZl7d/iV8w==
+"@orbit/jsonapi@^0.16.0-beta.8":
+  version "0.16.0-beta.8"
+  resolved "https://registry.yarnpkg.com/@orbit/jsonapi/-/jsonapi-0.16.0-beta.8.tgz#93b76e460b7334f4da8ecbe8cdc392f0b161a91d"
+  integrity sha512-SNRtfhZbObXbOEsANaTKTFDxk4nyjUm45iBsJGYhBV82cXK04RQ8EmDnlJXfJ0IndT2NVt/8yBr6Gw3JIlqnIw==
   dependencies:
-    "@orbit/core" "^0.16.0-beta.7"
-    "@orbit/data" "^0.16.0-beta.7"
-    "@orbit/serializers" "^0.16.0-beta.7"
-    "@orbit/utils" "^0.16.0-beta.7"
+    "@orbit/core" "^0.16.0-beta.8"
+    "@orbit/data" "^0.16.0-beta.8"
+    "@orbit/serializers" "^0.16.0-beta.8"
+    "@orbit/utils" "^0.16.0-beta.8"
 
-"@orbit/memory@^0.16.0-beta.7":
-  version "0.16.0-beta.7"
-  resolved "https://registry.yarnpkg.com/@orbit/memory/-/memory-0.16.0-beta.7.tgz#1c64023aa2a90acb96957759c9d6bfc798ea0f50"
-  integrity sha512-itHNCylVKfGNtm2Ck73nKgxLFoA8w16yFvjuAl6XnYEUtVYjpdQ+dK1ifCANxiT0S1IOCfjGZ7ebfs5t1OV8Vg==
+"@orbit/memory@^0.16.0-beta.8":
+  version "0.16.0-beta.8"
+  resolved "https://registry.yarnpkg.com/@orbit/memory/-/memory-0.16.0-beta.8.tgz#ea3061d87b511718d53d8eba0d00c55b8bfe7750"
+  integrity sha512-C5QxIohSz1Q07fxZfosuMGAM6nBxQOjsV5dXGDBZ65EAWShUcegxsmsT5SqbbKyXFrfiP9J5wcfxJFoMzKyGKA==
   dependencies:
-    "@orbit/core" "^0.16.0-beta.7"
-    "@orbit/data" "^0.16.0-beta.7"
-    "@orbit/immutable" "^0.16.0-beta.7"
-    "@orbit/record-cache" "^0.16.0-beta.7"
-    "@orbit/utils" "^0.16.0-beta.7"
+    "@orbit/core" "^0.16.0-beta.8"
+    "@orbit/data" "^0.16.0-beta.8"
+    "@orbit/immutable" "^0.16.0-beta.8"
+    "@orbit/record-cache" "^0.16.0-beta.8"
+    "@orbit/utils" "^0.16.0-beta.8"
 
-"@orbit/record-cache@^0.16.0-beta.7":
-  version "0.16.0-beta.7"
-  resolved "https://registry.yarnpkg.com/@orbit/record-cache/-/record-cache-0.16.0-beta.7.tgz#ab26d42c7a93d4b221d61a44e1d9915542ef1081"
-  integrity sha512-c1RxC2H4FP2VcRbbKKabtoFpYsxQjonBGPAV8MH5fplF2/mJq3AZUrCK/E1rVAh5ObtIN9oIGpMo0p7KBjrXJw==
+"@orbit/record-cache@^0.16.0-beta.8":
+  version "0.16.0-beta.8"
+  resolved "https://registry.yarnpkg.com/@orbit/record-cache/-/record-cache-0.16.0-beta.8.tgz#2c1aebe6e6182b8bf12fdeeddfa24da10a314f7c"
+  integrity sha512-5Sd3dwBiYX3ZGtbZDQTJ7mxCxXkkGgjDRiKuUz9Fp71gW21HwFCYHAUkJc7kZsnW+ViVrylgZS9ljWRN+TBk8A==
   dependencies:
-    "@orbit/core" "^0.16.0-beta.7"
-    "@orbit/data" "^0.16.0-beta.7"
-    "@orbit/utils" "^0.16.0-beta.7"
+    "@orbit/core" "^0.16.0-beta.8"
+    "@orbit/data" "^0.16.0-beta.8"
+    "@orbit/utils" "^0.16.0-beta.8"
 
-"@orbit/serializers@^0.16.0-beta.7":
-  version "0.16.0-beta.7"
-  resolved "https://registry.yarnpkg.com/@orbit/serializers/-/serializers-0.16.0-beta.7.tgz#6c1e52dd3cbee37fab8902e1e3f986f05734559d"
-  integrity sha512-+H66bHSoB6jbyI4Een/3k9SXtG0xuGtQWccqijOM7AT04f1I4I+iFdrVihkKKxVlsJOytbAYbIai+IY8LYpQcw==
+"@orbit/serializers@^0.16.0-beta.8":
+  version "0.16.0-beta.8"
+  resolved "https://registry.yarnpkg.com/@orbit/serializers/-/serializers-0.16.0-beta.8.tgz#6aa1e9373045302355cfaceb5d5de7de05b89e08"
+  integrity sha512-eMzTCs+bfp3Qj8w44AJNOZCs8E0vFU+KlWOpK5D46S6tS5cNQedJ6G2VKgSbFnW2qhsi3SI2729nh/wfbx1W5g==
 
-"@orbit/utils@^0.16.0-beta.7":
-  version "0.16.0-beta.7"
-  resolved "https://registry.yarnpkg.com/@orbit/utils/-/utils-0.16.0-beta.7.tgz#1d50f66cfad6fe1ebce924f5091a72a1510afa3e"
-  integrity sha512-ws2Kxg4/2ZzOlaUwt+AOurGFlx7fEPgWhsmnKCm8RACEv7JxojFGkNIJ+zL8v8Y4x5JVRvjO9rObOFl1t+OwMQ==
+"@orbit/utils@^0.16.0-beta.8":
+  version "0.16.0-beta.8"
+  resolved "https://registry.yarnpkg.com/@orbit/utils/-/utils-0.16.0-beta.8.tgz#5ed7a8662c8f83a1326e7189f7e75b1e687c096f"
+  integrity sha512-Rhay7vFA0976NCOnp1Hujx6auxzE7crzOd2YloNomqay6kNBACziwfWzgkTnPiOsEIXQI+h0sGtYwZPcuQC41Q==
 
 "@protobufjs/aspromise@^1.1.1", "@protobufjs/aspromise@^1.1.2":
   version "1.1.2"
