@@ -1,6 +1,6 @@
 {
   "name": "@orbit-server/fastify",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "description": "A server interface for Orbit sources",
@@ -16,6 +16,7 @@
   "dependencies": {
     "@orbit/data": "^0.16.0-beta.7",
     "@orbit/jsonapi": "^0.16.0-beta.7",
+    "@orbit/record-cache": "^0.16.0-beta.7",
     "apollo-server-fastify": "^2.6.2",
     "dataloader": "^1.4.0",
     "fastify": "^2.4.1",
@@ -36,6 +37,7 @@
     "prepare": "yarn build"
   },
   "devDependencies": {
+    "@orbit/memory": "^0.16.0-beta.7",
     "@types/graphql": "^14.2.0",
     "@types/inflected": "^1.1.29",
     "@types/node": "^12.0.7",
@@ -45,7 +47,6 @@
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.3.0",
     "eslint-plugin-prettier": "^3.1.0",
-    "@orbit/memory": "^0.16.0-beta.7",
     "prettier": "^1.18.2",
     "qunit": "^2.9.2",
     "sqlite3": "^4.0.8",
