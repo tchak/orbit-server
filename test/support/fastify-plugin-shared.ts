@@ -98,6 +98,26 @@ export default function(subject: Subject) {
 
       assert.equal(status, 404);
     });
+
+    test('create moon', async function(assert: Assert) {
+      const { body } = await createEarth(subject.fastify);
+      const id = body.data.id;
+
+      const response = await createMoon(subject.fastify, id);
+
+      assert.equal(response.status, 200);
+    });
+
+    test('get planet moons', async function(assert: Assert) {
+      const { body } = await createEarth(subject.fastify);
+      const id = body.data.id;
+      await createMoon(subject.fastify, id);
+
+      const response = await getPlanetMoons(subject.fastify, id);
+
+      assert.equal(response.status, 200);
+      assert.equal(response.body.data.length, 1);
+    });
   });
 
   module('graphql', function() {
@@ -129,6 +149,30 @@ export default function(subject: Subject) {
         name: 'Earth'
       });
     });
+
+    test('get planet moons', async function(assert: Assert) {
+      const { body } = await createEarth(subject.fastify);
+      const id = body.data.id;
+      await createMoon(subject.fastify, id);
+
+      const response = await getGQLPlanetMoons(subject.fastify, id);
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(response.body.data, {
+        planet: {
+          __typename: 'Planet',
+          moons: [
+            {
+              __typename: 'Moon',
+              name: 'Moon',
+              planet: {
+                name: 'Earth'
+              }
+            }
+          ]
+        }
+      });
+    });
   });
 }
 
@@ -157,6 +201,29 @@ function createEarth(fastify: FastifyInstance) {
   });
 }
 
+function createMoon(fastify: FastifyInstance, earthId: string) {
+  return request(fastify, {
+    method: 'POST',
+    url: '/moons',
+    payload: {
+      data: {
+        type: 'moons',
+        attributes: {
+          name: 'Moon'
+        },
+        relationships: {
+          planet: {
+            data: {
+              type: 'planets',
+              id: earthId
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
 function getPlanet(fastify: FastifyInstance, id: string) {
   return request(fastify, {
     url: `/planets/${id}`
@@ -166,6 +233,12 @@ function getPlanet(fastify: FastifyInstance, id: string) {
 function getPlanets(fastify: FastifyInstance) {
   return request(fastify, {
     url: '/planets'
+  });
+}
+
+function getPlanetMoons(fastify: FastifyInstance, id: string) {
+  return request(fastify, {
+    url: `/planets/${id}/moons`
   });
 }
 
@@ -185,6 +258,23 @@ function getGQLPlanet(fastify: FastifyInstance, id: string) {
     url: '/graphql',
     payload: {
       query: `{ planet(id: "${id}") { __typename id name } }`
+    }
+  });
+}
+
+function getGQLPlanetMoons(fastify: FastifyInstance, id: string) {
+  return request(fastify, {
+    method: 'POST',
+    url: '/graphql',
+    payload: {
+      query: `{ planet(id: "${id}") {
+        __typename
+        moons {
+          __typename
+          name
+          planet { name }
+        }
+      } }`
     }
   });
 }

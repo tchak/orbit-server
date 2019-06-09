@@ -154,9 +154,10 @@ export default class SQLCache extends AsyncRecordCache {
 
   async getRecordAsync(identity: RecordIdentity): Promise<OrbitRecord> {
     return new Promise(async resolve => {
+      const fields = this.getFieldsForType(identity.type);
       const properties = await this.scopeForType(identity.type)
         .where('id', identity.id)
-        .first();
+        .first(fields);
       if (properties) {
         resolve(this.fromProperties(identity.type, properties));
       }
@@ -174,8 +175,9 @@ export default class SQLCache extends AsyncRecordCache {
         records = records.concat(await this.getRecordsAsync(type));
       }
     } else if (typeof typeOrIdentities === 'string') {
-      records = (await this.scopeForType(typeOrIdentities)).map(properties =>
-        this.fromProperties(typeOrIdentities, properties)
+      let fields = this.getFieldsForType(typeOrIdentities);
+      records = (await this.scopeForType(typeOrIdentities).select(fields)).map(
+        properties => this.fromProperties(typeOrIdentities, properties)
       );
     } else if (Array.isArray(typeOrIdentities)) {
       const identities: RecordIdentity[] = typeOrIdentities;
@@ -185,10 +187,10 @@ export default class SQLCache extends AsyncRecordCache {
         const recordsById: Record<string, OrbitRecord> = {};
 
         for (let type in idsByType) {
-          for (let properties of await this.scopeForType(type).whereIn(
-            'id',
-            idsByType[type]
-          )) {
+          let fields = this.getFieldsForType(type);
+          for (let properties of await this.scopeForType(type)
+            .whereIn('id', idsByType[type])
+            .select(fields)) {
             recordsById[properties.id] = this.fromProperties(type, properties);
           }
         }
@@ -239,11 +241,58 @@ export default class SQLCache extends AsyncRecordCache {
     return identities;
   }
 
-  getInverseRelationshipsAsync(
+  async getRelatedRecordAsync(
+    identity: RecordIdentity,
+    relationship: string
+  ): Promise<RecordIdentity> {
+    return new Promise(async resolve => {
+      const relationships = this.schema.getModel(identity.type).relationships;
+      if (
+        relationships &&
+        this.schema.hasRelationship(identity.type, relationship)
+      ) {
+        const type = relationships[relationship].model as string;
+        const fields = this.getFieldsForType(type);
+        const properties = await this.scopeForType(type)
+          .join(
+            tableize(identity.type),
+            `${tableize(type)}.id`,
+            `${tableize(identity.type)}.${foreignKey(relationship)}`
+          )
+          .where(`${tableize(identity.type)}.id`, identity.id)
+          .first(fields);
+        resolve(this.fromProperties(type, properties));
+      }
+    });
+  }
+
+  async getRelatedRecordsAsync(
+    identity: RecordIdentity,
+    relationship: string
+  ): Promise<RecordIdentity[]> {
+    const relationships = this.schema.getModel(identity.type).relationships;
+    if (
+      relationships &&
+      this.schema.hasRelationship(identity.type, relationship)
+    ) {
+      const type = relationships[relationship].model as string;
+      const fields = this.getFieldsForType(type);
+      const inverse = relationships[relationship].inverse as string;
+      return (await this.scopeForType(type)
+        .where(foreignKey(inverse), identity.id)
+        .select(fields)).map(properties => {
+        return this.fromProperties(type, properties);
+      });
+    }
+    return [];
+  }
+
+  async getInverseRelationshipsAsync(
     recordIdentity: RecordIdentity
   ): Promise<RecordRelationshipIdentity[]> {
     recordIdentity;
-    return Promise.resolve([]);
+    const recordRelationshipIdentities: RecordRelationshipIdentity[] = [];
+    return recordRelationshipIdentities;
   }
 
   addInverseRelationshipsAsync(
@@ -334,6 +383,25 @@ export default class SQLCache extends AsyncRecordCache {
     }
 
     return properties;
+  }
+
+  protected getFieldsForType(type: string) {
+    const tableName = tableize(type);
+    const { relationships, attributes } = this.schema.getModel(type);
+    const fields: string[] = [`${tableName}.id`];
+    if (attributes) {
+      for (let attribute in attributes) {
+        fields.push(`${tableName}.${underscore(attribute)}`);
+      }
+    }
+    if (relationships) {
+      for (let relationship in relationships) {
+        if (relationships[relationship].type === 'hasOne') {
+          fields.push(`${tableName}.${foreignKey(relationship)}`);
+        }
+      }
+    }
+    return fields;
   }
 }
 
