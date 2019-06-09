@@ -37,7 +37,7 @@ module('Orbit Fastify Plugin (sql)', function(hooks: Hooks) {
 
   // @ts-ignore
   hooks.afterEach(async () => {
-    await source.cache.closeDB();
+    await fastify.close();
   });
 
   tests(subject);

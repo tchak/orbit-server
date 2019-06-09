@@ -45,6 +45,8 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
       fastify.register(fastifyGraphQL, { source, pubsub });
     }
 
+    fastify.addHook('onClose', (_, done) => source.disconnect().then(done));
+
     next();
   }
 );

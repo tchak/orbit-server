@@ -78,6 +78,10 @@ export default class SQLSource extends Source
     return this._cache;
   }
 
+  disconnect() {
+    return this.cache.closeDB();
+  }
+
   async upgrade(): Promise<void> {
     await this._cache.reopenDB();
   }
