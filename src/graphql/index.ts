@@ -8,7 +8,7 @@ import { deepGet, deepMerge } from '@orbit/utils';
 import DataLoader from 'dataloader';
 import { classify } from 'inflected';
 
-import { Source } from '../';
+import Source from '../source';
 import { eachAttribute, eachRelationship } from '../schema';
 
 interface Params {}

@@ -9,7 +9,7 @@ import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import { PubSubEngine } from 'graphql-subscriptions';
 import { Transform } from '@orbit/data';
 
-import { Source } from '../index';
+import Source from '../source';
 import fastifyJSONAPI from './jsonapi';
 import fastifyGraphQL from './graphql';
 

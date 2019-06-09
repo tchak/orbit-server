@@ -1,7 +1,7 @@
 import { JSONAPISerializer } from '@orbit/jsonapi';
 import { PubSubEngine } from 'graphql-subscriptions';
 
-import { Source } from '../index';
+import Source from '../source';
 import {
   Handler,
   Config,

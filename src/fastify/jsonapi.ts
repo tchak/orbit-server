@@ -4,8 +4,8 @@ import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import { JSONAPISerializer } from '@orbit/jsonapi';
 import { PubSubEngine } from 'graphql-subscriptions';
 
+import Source from '../source';
 import { buildJSONAPI } from '../jsonapi';
-import { Source } from '../index';
 
 interface JSONAPIFastifySettings {
   source: Source;

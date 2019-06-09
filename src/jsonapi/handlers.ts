@@ -19,7 +19,7 @@ import { ResourceDocument, JSONAPISerializer } from '@orbit/jsonapi';
 import { uuid } from '@orbit/utils';
 import { Observable } from 'rxjs';
 
-import { Source } from '../';
+import Source from '../source';
 
 export interface Config {
   source: Source;

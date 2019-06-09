@@ -3,7 +3,7 @@ import plugin from 'fastify-plugin';
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import { ApolloServer, gql, PubSubEngine } from 'apollo-server-fastify';
 
-import { Source } from '../index';
+import Source from '../source';
 import { buildGraphQL, createDataLoaders, Context } from '../graphql';
 
 interface GraphQLFastifySettings {
