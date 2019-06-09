@@ -7,5 +7,5 @@ A server interface for Orbit sources
 Install with yarn:
 
 ```
-yarn add orbit-server
+yarn add @orbit-server/fastify
 ```
