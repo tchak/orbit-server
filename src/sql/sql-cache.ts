@@ -3,7 +3,8 @@ import {
   Record as OrbitRecord,
   RecordIdentity,
   RecordOperation,
-  TransformBuilderFunc
+  TransformBuilderFunc,
+  Schema
 } from '@orbit/data';
 import {
   RecordRelationshipIdentity,
@@ -32,6 +33,7 @@ export default class SQLCache extends AsyncRecordCache {
     super(settings);
 
     this._config = settings.knex;
+    this._config.postProcessResponse = postProcessResponse;
   }
 
   async query(
@@ -155,11 +157,11 @@ export default class SQLCache extends AsyncRecordCache {
   async getRecordAsync(identity: RecordIdentity): Promise<OrbitRecord> {
     return new Promise(async resolve => {
       const fields = this.getFieldsForType(identity.type);
-      const properties = await this.scopeForType(identity.type)
+      const result = await this.scopeForType(identity.type)
         .where('id', identity.id)
         .first(fields);
-      if (properties) {
-        resolve(this.fromProperties(identity.type, properties));
+      if (result) {
+        resolve(result);
       }
       resolve();
     });
@@ -176,9 +178,7 @@ export default class SQLCache extends AsyncRecordCache {
       }
     } else if (typeof typeOrIdentities === 'string') {
       let fields = this.getFieldsForType(typeOrIdentities);
-      records = (await this.scopeForType(typeOrIdentities).select(fields)).map(
-        properties => this.fromProperties(typeOrIdentities, properties)
-      );
+      records = await this.scopeForType(typeOrIdentities).select(fields);
     } else if (Array.isArray(typeOrIdentities)) {
       const identities: RecordIdentity[] = typeOrIdentities;
 
@@ -188,10 +188,10 @@ export default class SQLCache extends AsyncRecordCache {
 
         for (let type in idsByType) {
           let fields = this.getFieldsForType(type);
-          for (let properties of await this.scopeForType(type)
+          for (let result of await this.scopeForType(type)
             .whereIn('id', idsByType[type])
             .select(fields)) {
-            recordsById[properties.id] = this.fromProperties(type, properties);
+            recordsById[result.id] = result;
           }
         }
         for (let identity of identities) {
@@ -253,7 +253,7 @@ export default class SQLCache extends AsyncRecordCache {
       ) {
         const type = relationships[relationship].model as string;
         const fields = this.getFieldsForType(type);
-        const properties = await this.scopeForType(type)
+        const result = await this.scopeForType(type)
           .join(
             tableize(identity.type),
             `${tableize(type)}.id`,
@@ -261,7 +261,7 @@ export default class SQLCache extends AsyncRecordCache {
           )
           .where(`${tableize(identity.type)}.id`, identity.id)
           .first(fields);
-        resolve(this.fromProperties(type, properties));
+        resolve(result);
       }
     });
   }
@@ -278,11 +278,9 @@ export default class SQLCache extends AsyncRecordCache {
       const type = relationships[relationship].model as string;
       const fields = this.getFieldsForType(type);
       const inverse = relationships[relationship].inverse as string;
-      return (await this.scopeForType(type)
+      return this.scopeForType(type)
         .where(foreignKey(inverse), identity.id)
-        .select(fields)).map(properties => {
-        return this.fromProperties(type, properties);
-      });
+        .select(fields);
     }
     return [];
   }
@@ -316,44 +314,7 @@ export default class SQLCache extends AsyncRecordCache {
   }
 
   protected scopeForType(type: string) {
-    return this._db(tableize(type));
-  }
-
-  protected fromProperties(
-    type: string,
-    properties: Record<string, unknown>
-  ): OrbitRecord {
-    const record: OrbitRecord = {
-      type,
-      id: properties.id as string,
-      attributes: {},
-      relationships: {}
-    };
-    const { attributes, relationships } = this.schema.getModel(type);
-
-    if (record.attributes) {
-      for (let attribute in attributes) {
-        let propertyName = underscore(attribute);
-        if (properties[propertyName] != null) {
-          record.attributes[attribute] = properties[propertyName];
-        }
-      }
-    }
-
-    if (record.relationships) {
-      for (let relationship in relationships) {
-        if (relationships[relationship].type === 'hasOne') {
-          record.relationships[relationship] = {
-            data: {
-              type: relationships[relationship].model as string,
-              id: properties[foreignKey(relationship)] as string
-            }
-          };
-        }
-      }
-    }
-
-    return record;
+    return this._db(tableize(type)).queryContext({ type, schema: this.schema });
   }
 
   protected toProperties(record: OrbitRecord) {
@@ -412,4 +373,60 @@ function groupIdentitiesByType(identities: RecordIdentity[]) {
     idsByType[identity.type].push(identity.id);
   }
   return idsByType;
+}
+
+type QueryResult = Record<string, unknown> | Record<string, unknown>[] | null;
+interface QueryContext {
+  type: string;
+  schema: Schema;
+}
+
+function postProcessResponse(result: QueryResult, context?: QueryContext) {
+  if (context) {
+    if (Array.isArray(result)) {
+      return result.map(result => queryResultToRecord(result, context));
+    } else if (result) {
+      return queryResultToRecord(result, context);
+    }
+
+    return null;
+  }
+  return result;
+}
+
+function queryResultToRecord(
+  result: Record<string, unknown>,
+  context: QueryContext
+): OrbitRecord {
+  const record: OrbitRecord = {
+    type: context.type,
+    id: result.id as string,
+    attributes: {},
+    relationships: {}
+  };
+  const { attributes, relationships } = context.schema.getModel(context.type);
+
+  if (record.attributes) {
+    for (let attribute in attributes) {
+      let propertyName = underscore(attribute);
+      if (result[propertyName] != null) {
+        record.attributes[attribute] = result[propertyName];
+      }
+    }
+  }
+
+  if (record.relationships) {
+    for (let relationship in relationships) {
+      if (relationships[relationship].type === 'hasOne') {
+        record.relationships[relationship] = {
+          data: {
+            type: relationships[relationship].model as string,
+            id: result[foreignKey(relationship)] as string
+          }
+        };
+      }
+    }
+  }
+
+  return record;
 }
