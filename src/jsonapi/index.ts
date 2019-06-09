@@ -15,7 +15,9 @@ import {
   handleAddToRelatedRecords,
   handleRemoveFromRelatedRecords,
   handleOperations,
-  handleWebSocket
+  handleWebSocket,
+  handleReplaceRelatedRecords,
+  handleReplaceRelatedRecord
 } from './handlers';
 import { eachRelationship } from '../schema';
 
@@ -91,6 +93,8 @@ function buildJSONAPIResource(
   ];
 
   eachRelationship(config.source.schema, type, (property, { type: kind }) => {
+    const url = `/:id/relationships/${property}`;
+
     if (kind === 'hasMany') {
       routes.push({
         method: 'GET',
@@ -99,16 +103,22 @@ function buildJSONAPIResource(
         handler: handleFindRelatedRecords
       });
       routes.push({
-        method: 'PATCH',
-        url: `/:id/relationships/${property}`,
+        method: 'POST',
+        url,
         config: { ...config, type, relationship: property },
         handler: handleAddToRelatedRecords
       });
       routes.push({
         method: 'DELETE',
-        url: `/:id/relationships/${property}`,
+        url,
         config: { ...config, type, relationship: property },
         handler: handleRemoveFromRelatedRecords
+      });
+      routes.push({
+        method: 'PATCH',
+        url,
+        config: { ...config, type, relationship: property },
+        handler: handleReplaceRelatedRecords
       });
     } else {
       routes.push({
@@ -116,6 +126,12 @@ function buildJSONAPIResource(
         url: `/:id/${property}`,
         config: { ...config, type, relationship: property },
         handler: handleFindRelatedRecord
+      });
+      routes.push({
+        method: 'PATCH',
+        url,
+        config: { ...config, type, relationship: property },
+        handler: handleReplaceRelatedRecord
       });
     }
   });

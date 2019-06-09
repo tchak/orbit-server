@@ -179,6 +179,48 @@ export async function handleRemoveFromRelatedRecords(
   return { data: [] };
 }
 
+export async function handleReplaceRelatedRecords(
+  { params, body, headers }: DefaultRequest,
+  { context }: FastifyReply<OutgoingMessage>
+): Promise<ResourceDocument> {
+  const { type, relationship, source, serializer } = context.config as Config;
+  const { id } = params;
+  const { data } = serializer.deserialize(body);
+  const options = transformOptions(headers);
+
+  await source.update(
+    q =>
+      q.replaceRelatedRecords(
+        { id, type },
+        relationship as string,
+        data as RecordIdentity[]
+      ),
+    options
+  );
+  return { data: [] };
+}
+
+export async function handleReplaceRelatedRecord(
+  { params, body, headers }: DefaultRequest,
+  { context }: FastifyReply<OutgoingMessage>
+): Promise<ResourceDocument> {
+  const { type, relationship, source, serializer } = context.config as Config;
+  const { id } = params;
+  const { data } = serializer.deserialize(body);
+  const options = transformOptions(headers);
+
+  await source.update(
+    q =>
+      q.replaceRelatedRecord(
+        { id, type },
+        relationship as string,
+        data as RecordIdentity
+      ),
+    options
+  );
+  return { data: [] };
+}
+
 export async function handleOperations(
   _: DefaultRequest,
   __: FastifyReply<OutgoingMessage>
