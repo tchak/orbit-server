@@ -19,7 +19,6 @@ import {
   handleReplaceRelatedRecords,
   handleReplaceRelatedRecord
 } from './handlers';
-import { eachRelationship } from '../schema';
 
 interface RouteDefinition {
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
@@ -92,7 +91,7 @@ function buildJSONAPIResource(
     }
   ];
 
-  eachRelationship(config.source.schema, type, (property, { type: kind }) => {
+  config.source.schema.eachRelationship(type, (property, { type: kind }) => {
     const url = `/:id/relationships/${property}`;
 
     if (kind === 'hasMany') {

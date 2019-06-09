@@ -321,47 +321,42 @@ export default class SQLCache extends AsyncRecordCache {
     const properties: Record<string, unknown> = {
       id: record.id
     };
-    const { attributes, relationships } = this.schema.getModel(record.type);
 
-    if (record.attributes) {
-      for (let attribute in attributes) {
-        if (record.attributes[attribute] !== undefined) {
-          properties[underscore(attribute)] = record.attributes[attribute];
-        }
+    this.schema.eachAttribute(record.type, property => {
+      if (record.attributes && record.attributes[property] !== undefined) {
+        properties[underscore(property)] = record.attributes[property];
       }
-    }
+    });
 
-    if (record.relationships) {
-      for (let relationship in relationships) {
-        if (relationships[relationship].type === 'hasOne') {
-          if (record.relationships[relationship]) {
-            let data = record.relationships[relationship]
-              .data as RecordIdentity | null;
-            properties[foreignKey(relationship)] = data ? data.id : null;
-          }
-        }
+    this.schema.eachRelationship(record.type, (property, { type: kind }) => {
+      if (
+        kind === 'hasOne' &&
+        record.relationships &&
+        record.relationships[property]
+      ) {
+        const data = record.relationships[property]
+          .data as RecordIdentity | null;
+        properties[foreignKey(property)] = data ? data.id : null;
       }
-    }
+    });
 
     return properties;
   }
 
   protected getFieldsForType(type: string) {
     const tableName = tableize(type);
-    const { relationships, attributes } = this.schema.getModel(type);
     const fields: string[] = [`${tableName}.id`];
-    if (attributes) {
-      for (let attribute in attributes) {
-        fields.push(`${tableName}.${underscore(attribute)}`);
+
+    this.schema.eachAttribute(type, property => {
+      fields.push(`${tableName}.${underscore(property)}`);
+    });
+
+    this.schema.eachRelationship(type, (property, { type: kind }) => {
+      if (kind === 'hasOne') {
+        fields.push(`${tableName}.${foreignKey(property)}`);
       }
-    }
-    if (relationships) {
-      for (let relationship in relationships) {
-        if (relationships[relationship].type === 'hasOne') {
-          fields.push(`${tableName}.${foreignKey(relationship)}`);
-        }
-      }
-    }
+    });
+
     return fields;
   }
 }
@@ -404,29 +399,28 @@ function queryResultToRecord(
     attributes: {},
     relationships: {}
   };
-  const { attributes, relationships } = context.schema.getModel(context.type);
 
-  if (record.attributes) {
-    for (let attribute in attributes) {
-      let propertyName = underscore(attribute);
-      if (result[propertyName] != null) {
-        record.attributes[attribute] = result[propertyName];
-      }
+  context.schema.eachAttribute(context.type, property => {
+    const propertyName = underscore(property);
+    if (result[propertyName] != null) {
+      (record.attributes as Record<string, unknown>)[property] =
+        result[propertyName];
     }
-  }
+  });
 
-  if (record.relationships) {
-    for (let relationship in relationships) {
-      if (relationships[relationship].type === 'hasOne') {
-        record.relationships[relationship] = {
+  context.schema.eachRelationship(
+    context.type,
+    (property, { type: kind, model: type }) => {
+      if (kind === 'hasOne') {
+        (record.relationships as Record<string, unknown>)[property] = {
           data: {
-            type: relationships[relationship].model as string,
-            id: result[foreignKey(relationship)] as string
+            type: type as string,
+            id: result[foreignKey(property)] as string
           }
         };
       }
     }
-  }
+  );
 
   return record;
 }

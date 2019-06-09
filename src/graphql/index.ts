@@ -9,7 +9,6 @@ import DataLoader from 'dataloader';
 import { classify } from 'inflected';
 
 import Source from '../source';
-import { eachAttribute, eachRelationship } from '../schema';
 
 interface Params {}
 
@@ -81,11 +80,11 @@ function createTypeDef(schema: Schema, type: string) {
   let typeDef = [`type ${classify(type)} {`];
   typeDef.push('  id: ID!');
 
-  eachAttribute(schema, type, property => {
+  schema.eachAttribute(type, property => {
     typeDef.push(`  ${property}: String`);
   });
 
-  eachRelationship(schema, type, (property, { model: type, type: kind }) => {
+  schema.eachRelationship(type, (property, { model: type, type: kind }) => {
     let relatedType = classify(type as string);
     if (kind === 'hasMany') {
       typeDef.push(`  ${property}: [${relatedType}]!`);
@@ -106,12 +105,12 @@ function createResolvers(
   const typeClassName = classify(type);
   const resolver: Record<string, Resolver> = {};
 
-  eachAttribute(schema, type, property => {
+  schema.eachAttribute(type, property => {
     resolver[property] = (parent: OrbitRecord) =>
       deepGet(parent, ['attributes', property]);
   });
 
-  eachRelationship(schema, type, (property, { type: kind }) => {
+  schema.eachRelationship(type, (property, { type: kind }) => {
     let namespace = `${typeClassName}.${property}`;
 
     if (kind === 'hasMany') {
