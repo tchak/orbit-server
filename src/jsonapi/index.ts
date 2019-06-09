@@ -44,7 +44,14 @@ export function buildJSONAPI(
     );
   }
 
-  routes['operations'] = [buildJSONAPIOperations(config)];
+  routes['operations'] = [
+    {
+      method: 'PATCH',
+      url: '/',
+      config: { ...config, type: 'operations' },
+      handler: handleOperations
+    }
+  ];
 
   return routes;
 }

@@ -16,8 +16,12 @@ import {
   SchemaError,
   RecordOperation
 } from '@orbit/data';
-import { ResourceDocument, JSONAPISerializer } from '@orbit/jsonapi';
-import { uuid } from '@orbit/utils';
+import {
+  ResourceDocument,
+  JSONAPISerializer,
+  ResourceOperationsDocument
+} from '@orbit/jsonapi';
+import { uuid, toArray } from '@orbit/utils';
 import { Observable } from 'rxjs';
 
 import Source from '../source';
@@ -30,9 +34,9 @@ export interface Config {
 }
 
 export type Handler = (
-  req: DefaultRequest,
+  req: DefaultRequest | OperationsRequest,
   reply: FastifyReply<OutgoingMessage>
-) => Promise<ResourceDocument | ErrorsDocument>;
+) => Promise<ResourceDocument | ErrorsDocument | OperationsResponseDocument>;
 type DefaultRequest = FastifyRequest<
   IncomingMessage,
   DefaultQuery,
@@ -41,6 +45,18 @@ type DefaultRequest = FastifyRequest<
   ResourceDocument
 >;
 
+type OperationsRequest = FastifyRequest<
+  IncomingMessage,
+  DefaultQuery,
+  DefaultParams,
+  DefaultHeaders,
+  ResourceOperationsDocument
+>;
+
+interface OperationsResponseDocument {
+  operations: ResourceDocument[];
+}
+
 export async function handleAddRecord(
   { body, headers }: DefaultRequest,
   { context }: FastifyReply<OutgoingMessage>
@@ -48,7 +64,6 @@ export async function handleAddRecord(
   const { source, serializer } = context.config as Config;
   const { data } = serializer.deserialize(body);
   const options = transformOptions(headers);
-
   const record: OrbitRecord = await source.update(
     q => q.addRecord(data as OrbitRecord),
     options
@@ -223,10 +238,18 @@ export async function handleReplaceRelatedRecord(
 }
 
 export async function handleOperations(
-  _: DefaultRequest,
-  __: FastifyReply<OutgoingMessage>
-): Promise<ResourceDocument> {
-  return { data: [] };
+  { body }: OperationsRequest,
+  { context }: FastifyReply<OutgoingMessage>
+): Promise<OperationsResponseDocument> {
+  const { source, serializer } = context.config as Config;
+  const operations = serializer.deserializeOperationsDocument(body);
+  for (let operation of operations) {
+    if (operation.op === 'addRecord') {
+      source.schema.initializeRecord(operation.record);
+    }
+  }
+  const result: OrbitRecord[] = toArray(await source.update(operations));
+  return { operations: result.map(data => serializer.serialize({ data })) };
 }
 
 export function handleWebSocket(

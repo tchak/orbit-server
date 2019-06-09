@@ -173,6 +173,37 @@ export default function(subject: Subject) {
         }
       });
     });
+
+    test('operations', async function(assert: Assert) {
+      const { body } = await createEarth(subject.fastify);
+      const id = body.data.id;
+
+      const response = await operationsOnEarth(subject.fastify, id);
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(response.body, {
+        operations: [
+          {
+            data: {
+              type: 'planets',
+              id,
+              attributes: {
+                name: 'Earth 3'
+              }
+            }
+          },
+          {
+            data: {
+              type: 'planets',
+              id: response.body.operations[1].data.id,
+              attributes: {
+                name: 'Mars'
+              }
+            }
+          }
+        ]
+      });
+    });
   });
 }
 
@@ -239,6 +270,43 @@ function getPlanets(fastify: FastifyInstance) {
 function getPlanetMoons(fastify: FastifyInstance, id: string) {
   return request(fastify, {
     url: `/planets/${id}/moons`
+  });
+}
+
+function operationsOnEarth(fastify: FastifyInstance, id: string) {
+  return request(fastify, {
+    method: 'PATCH',
+    url: '/operations',
+    payload: {
+      operations: [
+        {
+          op: 'update',
+          ref: {
+            type: 'planets',
+            id
+          },
+          data: {
+            type: 'planets',
+            id,
+            attributes: {
+              name: 'Earth 3'
+            }
+          }
+        },
+        {
+          op: 'add',
+          ref: {
+            type: 'planets'
+          },
+          data: {
+            type: 'planets',
+            attributes: {
+              name: 'Mars'
+            }
+          }
+        }
+      ]
+    }
   });
 }
 
