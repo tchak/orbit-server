@@ -1,6 +1,6 @@
 {
   "name": "@orbit-server/fastify",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "description": "A server interface for Orbit sources",
@@ -32,7 +32,8 @@
   "scripts": {
     "build": "rm -rf ./dist && tsc",
     "test": "qunit --require ts-node/register 'test/**/*-test.ts'",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "prepare": "yarn build"
   },
   "devDependencies": {
     "@types/graphql": "^14.2.0",
