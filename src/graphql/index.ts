@@ -1,13 +1,15 @@
 import {
+  Schema,
   RecordIdentity,
   Record as OrbitRecord,
   serializeRecordIdentity
 } from '@orbit/data';
-import DataLoader from 'dataloader';
-import { classify, pluralize } from 'inflected';
-
-import { Source, Schema, ModelDefinition } from '../';
 import { deepGet, deepMerge } from '@orbit/utils';
+import DataLoader from 'dataloader';
+import { classify } from 'inflected';
+
+import { Source } from '../';
+import { eachAttribute, eachRelationship } from '../schema';
 
 interface Params {}
 
@@ -40,15 +42,15 @@ export function buildGraphQL(schema: Schema) {
   const resolvers = { Query: {} };
   const typeDef = [];
 
-  for (let model of schema.models) {
-    typeDef.push(createTypeDef(model));
-    deepMerge(resolvers, createResolvers(model));
+  for (let type in schema.models) {
+    typeDef.push(createTypeDef(schema, type));
+    deepMerge(resolvers, createResolvers(schema, type));
   }
 
   typeDef.push('type Query {');
-  for (let model of schema.models) {
-    typeDef.push(`  ${pluralize(model.type)}: [${classify(model.type)}]!`);
-    typeDef.push(`  ${model.type}(id: ID!): ${classify(model.type)}`);
+  for (let type in schema.models) {
+    typeDef.push(`  ${schema.pluralize(type)}: [${classify(type)}]!`);
+    typeDef.push(`  ${type}(id: ID!): ${classify(type)}`);
   }
   typeDef.push('}');
 
@@ -75,22 +77,22 @@ export function createDataLoaders() {
   };
 }
 
-function createTypeDef(schema: ModelDefinition) {
-  let typeDef = [`type ${classify(schema.type)} {`];
+function createTypeDef(schema: Schema, type: string) {
+  let typeDef = [`type ${classify(type)} {`];
   typeDef.push('  id: ID!');
 
-  for (let attribute of schema.attributes) {
-    typeDef.push(`  ${attribute.property}: String`);
-  }
+  eachAttribute(schema, type, property => {
+    typeDef.push(`  ${property}: String`);
+  });
 
-  for (let relationship of schema.relationships) {
-    let relatedType = classify(relationship.type);
-    if (relationship.kind === 'hasMany') {
-      typeDef.push(`  ${relationship.property}: [${relatedType}]!`);
+  eachRelationship(schema, type, (property, { model: type, type: kind }) => {
+    let relatedType = classify(type as string);
+    if (kind === 'hasMany') {
+      typeDef.push(`  ${property}: [${relatedType}]!`);
     } else {
-      typeDef.push(`  ${relationship.property}: ${relatedType}`);
+      typeDef.push(`  ${property}: ${relatedType}`);
     }
-  }
+  });
 
   typeDef.push('}');
 
@@ -98,54 +100,42 @@ function createTypeDef(schema: ModelDefinition) {
 }
 
 function createResolvers(
-  schema: ModelDefinition
+  schema: Schema,
+  type: string
 ): Record<string, Record<string, Resolver>> {
-  const type = schema.type;
   const typeClassName = classify(type);
   const resolver: Record<string, Resolver> = {};
 
-  for (let attribute of schema.attributes) {
-    resolver[attribute.property] = (parent: OrbitRecord) =>
-      deepGet(parent, ['attributes', attribute.property]);
-  }
+  eachAttribute(schema, type, property => {
+    resolver[property] = (parent: OrbitRecord) =>
+      deepGet(parent, ['attributes', property]);
+  });
 
-  for (let relationship of schema.relationships) {
-    let namespace = `${typeClassName}.${relationship.property}`;
+  eachRelationship(schema, type, (property, { type: kind }) => {
+    let namespace = `${typeClassName}.${property}`;
 
-    if (relationship.kind === 'hasMany') {
-      resolver[relationship.property] = (
-        parent,
-        _,
-        { source, getDataLoader }
-      ) => {
+    if (kind === 'hasMany') {
+      resolver[property] = (parent, _, { source, getDataLoader }) => {
         return getDataLoader(namespace, (records: OrbitRecord[]) => {
           return Promise.all(
             records.map(record =>
-              source.query(q =>
-                q.findRelatedRecords(record, relationship.property)
-              )
+              source.query(q => q.findRelatedRecords(record, property))
             )
           );
         }).load(parent as RecordIdentity);
       };
     } else {
-      resolver[relationship.property] = (
-        parent,
-        _,
-        { source, getDataLoader }
-      ) => {
+      resolver[property] = (parent, _, { source, getDataLoader }) => {
         return getDataLoader(namespace, (records: OrbitRecord[]) => {
           return Promise.all(
             records.map(record =>
-              source.query(q =>
-                q.findRelatedRecord(record, relationship.property)
-              )
+              source.query(q => q.findRelatedRecord(record, property))
             )
           );
         }).load(parent as RecordIdentity);
       };
     }
-  }
+  });
 
   return {
     [typeClassName]: resolver,
@@ -155,7 +145,7 @@ function createResolvers(
           q.findRecord({ type, id: params.id as string })
         );
       },
-      [pluralize(type)]: (_, params: FindRecordsParams, { source }) => {
+      [schema.pluralize(type)]: (_, params: FindRecordsParams, { source }) => {
         if (params.ids) {
           source.query(q =>
             q.findRecords((params.ids as string[]).map(id => ({ type, id })))

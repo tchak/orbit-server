@@ -9,17 +9,16 @@ import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import { PubSubEngine } from 'graphql-subscriptions';
 import { Transform } from '@orbit/data';
 
-import { Source, Schema } from '../index';
+import { Source } from '../index';
 import fastifyJSONAPI from './jsonapi';
 import fastifyGraphQL from './graphql';
 
 export { fastifyJSONAPI, fastifyGraphQL };
 
 export interface ServerSettings {
+  source: Source;
   jsonapi?: boolean;
   graphql?: boolean;
-  schema: Schema;
-  source: Source;
   pubsub?: PubSubEngine;
 }
 
@@ -28,7 +27,7 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
     fastify.register(helmet);
     fastify.register(cors);
 
-    const { schema, source, pubsub } = settings;
+    const { source, pubsub } = settings;
 
     if (pubsub) {
       fastify.register(websocket);
@@ -39,11 +38,11 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
     }
 
     if (settings.jsonapi) {
-      fastify.register(fastifyJSONAPI, { schema, source, pubsub });
+      fastify.register(fastifyJSONAPI, { source, pubsub });
     }
 
     if (settings.graphql) {
-      fastify.register(fastifyGraphQL, { schema, source });
+      fastify.register(fastifyGraphQL, { source, pubsub });
     }
 
     next();

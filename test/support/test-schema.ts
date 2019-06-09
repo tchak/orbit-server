@@ -1,51 +1,41 @@
-import { Schema } from '../../src';
+import { Schema } from '@orbit/data';
 
-const schema: Schema = {
-  models: [
-    {
-      type: 'planet',
-      attributes: [
-        {
-          property: 'name',
+export default new Schema({
+  models: {
+    planet: {
+      attributes: {
+        name: {
           type: 'string'
         },
-        {
-          property: 'description',
+        description: {
           type: 'string'
         },
-        {
-          property: 'createdAt',
+        createdAt: {
           type: 'datetime'
         }
-      ],
-      relationships: [
-        {
-          property: 'moons',
-          kind: 'hasMany',
-          type: 'moon',
+      },
+      relationships: {
+        moons: {
+          type: 'hasMany',
+          model: 'moon',
           inverse: 'planet',
           dependent: 'remove'
         }
-      ]
+      }
     },
-    {
-      type: 'moon',
-      attributes: [
-        {
-          property: 'name',
+    moon: {
+      attributes: {
+        name: {
           type: 'string'
         }
-      ],
-      relationships: [
-        {
-          property: 'planet',
-          kind: 'hasOne',
-          type: 'planet',
+      },
+      relationships: {
+        planet: {
+          type: 'hasOne',
+          model: 'planet',
           inverse: 'moons'
         }
-      ]
+      }
     }
-  ]
-};
-
-export default schema;
+  }
+});

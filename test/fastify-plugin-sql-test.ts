@@ -6,7 +6,7 @@ import { PubSub } from 'graphql-subscriptions';
 
 import schema from './support/test-schema';
 import tests, { Subject } from './support/fastify-plugin-shared';
-import { Plugin, toOrbitSchema } from '../src';
+import { Plugin } from '../src';
 import SQLSource from '../src/sql';
 
 let fastify: FastifyInstance;
@@ -17,9 +17,8 @@ module('Orbit Fastify Plugin (sql)', function(hooks: Hooks) {
   // @ts-ignore
   hooks.beforeEach(() => {
     fastify = Fastify();
-    source = new SQLSource({ schema: toOrbitSchema(schema) });
+    source = new SQLSource({ schema });
     fastify.register(Plugin, {
-      schema,
       source,
       pubsub: new PubSub(),
       jsonapi: true,

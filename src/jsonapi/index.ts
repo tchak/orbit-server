@@ -1,8 +1,7 @@
-import { pluralize } from 'inflected';
 import { JSONAPISerializer } from '@orbit/jsonapi';
 import { PubSubEngine } from 'graphql-subscriptions';
 
-import { Source, Schema, ModelDefinition } from '../index';
+import { Source } from '../index';
 import {
   Handler,
   Config,
@@ -18,6 +17,7 @@ import {
   handleOperations,
   handleWebSocket
 } from './handlers';
+import { eachRelationship } from '../schema';
 
 interface RouteDefinition {
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
@@ -37,29 +37,26 @@ interface RouteConfig {
 }
 
 export function buildJSONAPI(
-  schema: Schema,
   config: RouteConfig
-): [string, RouteDefinition[]][] {
-  const routes: [string, RouteDefinition[]][] = [];
+): Record<string, RouteDefinition[]> {
+  const routes: Record<string, RouteDefinition[]> = {};
 
-  for (let model of schema.models) {
-    routes.push([
-      `/${pluralize(model.type)}`,
-      buildJSONAPIResource(model, config)
-    ]);
+  for (let type in config.source.schema.models) {
+    routes[config.source.schema.pluralize(type)] = buildJSONAPIResource(
+      type,
+      config
+    );
   }
 
-  routes.push(['/operations', [buildJSONAPIOperations(config)]]);
+  routes['operations'] = [buildJSONAPIOperations(config)];
 
   return routes;
 }
 
 function buildJSONAPIResource(
-  model: ModelDefinition,
+  type: string,
   config: RouteConfig
 ): RouteDefinition[] {
-  const { type, relationships } = model;
-
   const routes: RouteDefinition[] = [
     {
       method: 'GET',
@@ -93,35 +90,35 @@ function buildJSONAPIResource(
     }
   ];
 
-  for (let relationship of relationships) {
-    if (relationship.kind === 'hasMany') {
+  eachRelationship(config.source.schema, type, (property, { type: kind }) => {
+    if (kind === 'hasMany') {
       routes.push({
         method: 'GET',
-        url: `/:id/${relationship.property}`,
-        config: { ...config, type, relationship: relationship.property },
+        url: `/:id/${property}`,
+        config: { ...config, type, relationship: property },
         handler: handleFindRelatedRecords
       });
       routes.push({
         method: 'PATCH',
-        url: `/:id/relationships/${relationship.property}`,
-        config: { ...config, type, relationship: relationship.property },
+        url: `/:id/relationships/${property}`,
+        config: { ...config, type, relationship: property },
         handler: handleAddToRelatedRecords
       });
       routes.push({
         method: 'DELETE',
-        url: `/:id/relationships/${relationship.property}`,
-        config: { ...config, type, relationship: relationship.property },
+        url: `/:id/relationships/${property}`,
+        config: { ...config, type, relationship: property },
         handler: handleRemoveFromRelatedRecords
       });
     } else {
       routes.push({
         method: 'GET',
-        url: `/:id/${relationship.property}`,
-        config: { ...config, type, relationship: relationship.property },
+        url: `/:id/${property}`,
+        config: { ...config, type, relationship: property },
         handler: handleFindRelatedRecord
       });
     }
-  }
+  });
 
   return routes;
 }

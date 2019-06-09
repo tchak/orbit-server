@@ -7,7 +7,7 @@ import { PubSub } from 'graphql-subscriptions';
 
 import schema from './support/test-schema';
 import tests, { Subject } from './support/fastify-plugin-shared';
-import { Plugin, toOrbitSchema } from '../src';
+import { Plugin } from '../src';
 
 let fastify: FastifyInstance;
 let source: MemorySource;
@@ -17,9 +17,8 @@ module('Orbit Fastify Plugin (memory)', function(hooks: Hooks) {
   // @ts-ignore
   hooks.beforeEach(() => {
     fastify = Fastify();
-    source = new MemorySource({ schema: toOrbitSchema(schema) });
+    source = new MemorySource({ schema });
     fastify.register(Plugin, {
-      schema,
       source,
       pubsub: new PubSub(),
       jsonapi: true,
