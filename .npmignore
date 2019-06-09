@@ -1,0 +1,9 @@
+docs
+node_modules
+test
+tmp
+*.log
+*.DS_Store
+*.editorconfig
+*.gitignore
+*.travis.yml
