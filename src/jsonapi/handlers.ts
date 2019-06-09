@@ -13,7 +13,8 @@ import {
   Transform,
   RecordNotFoundException,
   RecordException,
-  SchemaError
+  SchemaError,
+  RecordOperation
 } from '@orbit/data';
 import { ResourceDocument, JSONAPISerializer } from '@orbit/jsonapi';
 import { uuid } from '@orbit/utils';
@@ -239,8 +240,9 @@ export function handleWebSocket(
     )();
     const observable = observableFromAsyncIterator<Transform>(iterator);
     const subscription = observable.subscribe(transform => {
-      // @ts-ignore
-      const operations = serializer.serializeOperations(transform.operations);
+      const operations = serializer.serializeOperations(
+        transform.operations as RecordOperation[]
+      );
       connection.socket.send(JSON.stringify({ operations }));
     });
 
