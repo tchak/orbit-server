@@ -17,7 +17,14 @@ module('Orbit Fastify Plugin (sql)', function(hooks: Hooks) {
   // @ts-ignore
   hooks.beforeEach(() => {
     fastify = Fastify();
-    source = new SQLSource({ schema });
+    source = new SQLSource({
+      schema,
+      knex: {
+        client: 'sqlite3',
+        connection: { filename: ':memory:' },
+        useNullAsDefault: true
+      }
+    });
     fastify.register(Plugin, {
       source,
       pubsub: new PubSub(),

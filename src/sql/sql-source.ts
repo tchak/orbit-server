@@ -12,18 +12,18 @@ import Orbit, {
   updatable,
   Updatable
 } from '@orbit/data';
+import Knex from 'knex';
 
 import SQLCache, { SQLCacheSettings } from './sql-cache';
 
 const { assert } = Orbit;
 
 export interface SQLSourceSettings extends SourceSettings {
-  namespace?: string;
-  cacheSettings?: SQLCacheSettings;
+  knex?: Knex.Config;
 }
 
 /**
- * Source for storing data in IndexedDB.
+ * Source for storing data in SQL database.
  */
 @queryable
 @updatable
@@ -51,18 +51,25 @@ export default class SQLSource extends Source
       !!settings.schema
     );
 
-    settings.name = settings.name || 'indexedDB';
+    assert(
+      "SQLSource's `knex` must be specified in `settings.knex` constructor argument",
+      !!settings.knex
+    );
+
+    settings.name = settings.name || 'sql';
 
     super(settings);
 
-    let cacheSettings: SQLCacheSettings = settings.cacheSettings || {};
+    let cacheSettings: SQLCacheSettings = {
+      knex: settings.knex as Knex.Config
+    };
     cacheSettings.schema = settings.schema;
     cacheSettings.keyMap = settings.keyMap;
     cacheSettings.queryBuilder =
       cacheSettings.queryBuilder || this.queryBuilder;
     cacheSettings.transformBuilder =
       cacheSettings.transformBuilder || this.transformBuilder;
-    cacheSettings.namespace = cacheSettings.namespace || settings.namespace;
+    cacheSettings.knex = cacheSettings.knex || settings.knex;
 
     this._cache = new SQLCache(cacheSettings);
   }

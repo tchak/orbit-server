@@ -16,7 +16,7 @@ import Knex from 'knex';
 import { underscore, foreignKey, tableize } from 'inflected';
 
 export interface SQLCacheSettings extends AsyncRecordCacheSettings {
-  namespace?: string;
+  knex: Knex.Config;
 }
 
 /**
@@ -25,13 +25,13 @@ export interface SQLCacheSettings extends AsyncRecordCacheSettings {
  * Because SQL access is async, this cache extends `AsyncRecordCache`.
  */
 export default class SQLCache extends AsyncRecordCache {
-  protected _namespace: string;
+  protected _config: Knex.Config;
   protected _db: Knex;
 
   constructor(settings: SQLCacheSettings) {
     super(settings);
 
-    this._namespace = settings.namespace || 'orbit';
+    this._config = settings.knex;
   }
 
   async query(
@@ -53,8 +53,8 @@ export default class SQLCache extends AsyncRecordCache {
     return super.patch(operationOrOperations);
   }
 
-  get namespace(): string {
-    return this._namespace;
+  get config(): Knex.Config {
+    return this._config;
   }
 
   async upgrade(): Promise<void> {
@@ -72,33 +72,13 @@ export default class SQLCache extends AsyncRecordCache {
     }
   }
 
-  /**
-   * The version to specify when opening the IndexedDB database.
-   */
-  get dbVersion(): number {
-    return this._schema.version;
-  }
-
-  /**
-   * IndexedDB database name.
-   *
-   * Defaults to the namespace of the app, which can be overridden in the constructor.
-   */
-  get dbName(): string {
-    return this._namespace;
-  }
-
   get isDBOpen(): boolean {
     return !!this._db;
   }
 
   async openDB(): Promise<any> {
     if (!this.isDBOpen) {
-      const db = Knex({
-        client: 'sqlite3',
-        connection: { filename: ':memory:' },
-        useNullAsDefault: true
-      });
+      const db = Knex(this._config);
       await this.createDB(db);
       this._db = db;
     }
