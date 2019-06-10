@@ -1,6 +1,7 @@
 // @ts-ignore
 import { module, test } from 'qunit';
 import { FastifyInstance, HTTPInjectOptions } from 'fastify';
+import { uuid } from '@orbit/utils';
 
 export interface Subject {
   fastify: FastifyInstance;
@@ -118,6 +119,118 @@ export default function(subject: Subject) {
       assert.equal(response.status, 200);
       assert.equal(response.body.data.length, 1);
     });
+
+    test('operations', async function(assert: Assert) {
+      const {
+        body: {
+          data: { id: earthId }
+        }
+      } = await createEarth(subject.fastify);
+      const {
+        body: {
+          data: { id: marsId }
+        }
+      } = await createMars(subject.fastify);
+      const {
+        body: {
+          data: { id: moonId }
+        }
+      } = await createMoon(subject.fastify, earthId);
+
+      const response = await operationsWithEarthAndMars(
+        subject.fastify,
+        earthId,
+        marsId,
+        moonId
+      );
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(response.body, {
+        operations: [
+          {
+            data: compact({
+              type: 'planets',
+              id: earthId,
+              attributes: {
+                name: 'Beautiful Earth'
+              },
+              relationships: response.body.operations[0].data.relationships
+            })
+          },
+          {
+            data: {
+              type: 'moons',
+              id: moonId,
+              attributes: {
+                name: 'Moon'
+              },
+              relationships: {
+                planet: {
+                  data: {
+                    type: 'planets',
+                    id: earthId
+                  }
+                }
+              }
+            }
+          },
+          {
+            data: {
+              type: 'moons',
+              id: response.body.operations[2].data.id,
+              attributes: {
+                name: 'Phobos'
+              }
+            }
+          },
+          {
+            data: {
+              type: 'moons',
+              id: response.body.operations[3].data.id,
+              attributes: {
+                name: 'Deimos'
+              }
+            }
+          },
+          {
+            data: {
+              type: 'planets',
+              id: marsId,
+              attributes: {
+                name: 'Mars'
+              },
+              relationships: {
+                moons: {
+                  data: [
+                    {
+                      type: 'moons',
+                      id: response.body.operations[2].data.id
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            data: {
+              type: 'moons',
+              id: response.body.operations[3].data.id,
+              attributes: {
+                name: 'Deimos'
+              },
+              relationships: {
+                planet: {
+                  data: {
+                    type: 'planets',
+                    id: marsId
+                  }
+                }
+              }
+            }
+          }
+        ]
+      });
+    });
   });
 
   module('graphql', function() {
@@ -173,37 +286,6 @@ export default function(subject: Subject) {
         }
       });
     });
-
-    test('operations', async function(assert: Assert) {
-      const { body } = await createEarth(subject.fastify);
-      const id = body.data.id;
-
-      const response = await operationsOnEarth(subject.fastify, id);
-
-      assert.equal(response.status, 200);
-      assert.deepEqual(response.body, {
-        operations: [
-          {
-            data: {
-              type: 'planets',
-              id,
-              attributes: {
-                name: 'Earth 3'
-              }
-            }
-          },
-          {
-            data: {
-              type: 'planets',
-              id: response.body.operations[1].data.id,
-              attributes: {
-                name: 'Mars'
-              }
-            }
-          }
-        ]
-      });
-    });
   });
 }
 
@@ -226,6 +308,21 @@ function createEarth(fastify: FastifyInstance) {
         type: 'planets',
         attributes: {
           name: 'Earth'
+        }
+      }
+    }
+  });
+}
+
+function createMars(fastify: FastifyInstance) {
+  return request(fastify, {
+    method: 'POST',
+    url: '/planets',
+    payload: {
+      data: {
+        type: 'planets',
+        attributes: {
+          name: 'Mars'
         }
       }
     }
@@ -273,7 +370,15 @@ function getPlanetMoons(fastify: FastifyInstance, id: string) {
   });
 }
 
-function operationsOnEarth(fastify: FastifyInstance, id: string) {
+function operationsWithEarthAndMars(
+  fastify: FastifyInstance,
+  earthId: string,
+  marsId: string,
+  moonId: string
+) {
+  const phobosId = uuid();
+  const deimosId = uuid();
+
   return request(fastify, {
     method: 'PATCH',
     url: '/operations',
@@ -283,26 +388,73 @@ function operationsOnEarth(fastify: FastifyInstance, id: string) {
           op: 'update',
           ref: {
             type: 'planets',
-            id
+            id: earthId
           },
           data: {
             type: 'planets',
-            id,
+            id: earthId,
             attributes: {
-              name: 'Earth 3'
+              name: 'Beautiful Earth'
+            }
+          }
+        },
+        {
+          op: 'remove',
+          ref: {
+            type: 'moons',
+            id: moonId
+          }
+        },
+        {
+          op: 'add',
+          ref: {
+            type: 'moons',
+            id: phobosId
+          },
+          data: {
+            type: 'moons',
+            id: phobosId,
+            attributes: {
+              name: 'Phobos'
             }
           }
         },
         {
           op: 'add',
           ref: {
-            type: 'planets'
+            type: 'moons',
+            id: deimosId
+          },
+          data: {
+            type: 'moons',
+            id: deimosId,
+            attributes: {
+              name: 'Deimos'
+            }
+          }
+        },
+        {
+          op: 'add',
+          ref: {
+            type: 'planets',
+            id: marsId,
+            relationship: 'moons'
+          },
+          data: {
+            type: 'moons',
+            id: phobosId
+          }
+        },
+        {
+          op: 'update',
+          ref: {
+            type: 'moons',
+            id: deimosId,
+            relationship: 'planet'
           },
           data: {
             type: 'planets',
-            attributes: {
-              name: 'Mars'
-            }
+            id: marsId
           }
         }
       ]
@@ -345,4 +497,13 @@ function getGQLPlanetMoons(fastify: FastifyInstance, id: string) {
       } }`
     }
   });
+}
+
+function compact(obj: Record<string, unknown>) {
+  for (let key in obj) {
+    if (obj[key] === undefined) {
+      delete obj[key];
+    }
+  }
+  return obj;
 }

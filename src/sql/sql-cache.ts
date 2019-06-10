@@ -157,11 +157,11 @@ export default class SQLCache extends AsyncRecordCache {
   async getRecordAsync(identity: RecordIdentity): Promise<OrbitRecord> {
     return new Promise(async resolve => {
       const fields = this.getFieldsForType(identity.type);
-      const result = await this.scopeForType(identity.type)
+      const record = await this.scopeForType(identity.type)
         .where('id', identity.id)
         .first(fields);
-      if (result) {
-        resolve(result);
+      if (record) {
+        resolve(record);
       }
       resolve();
     });
@@ -188,10 +188,10 @@ export default class SQLCache extends AsyncRecordCache {
 
         for (let type in idsByType) {
           let fields = this.getFieldsForType(type);
-          for (let result of await this.scopeForType(type)
+          for (let record of await this.scopeForType(type)
             .whereIn('id', idsByType[type])
             .select(fields)) {
-            recordsById[result.id] = result;
+            recordsById[record.id] = record;
           }
         }
         for (let identity of identities) {
@@ -225,20 +225,22 @@ export default class SQLCache extends AsyncRecordCache {
   }
 
   async removeRecordAsync(identity: RecordIdentity) {
+    const record = await this.getRecordAsync(identity);
     await this.scopeForType(identity.type)
       .where({ id: identity.id })
       .del();
-    return identity;
+    return record;
   }
 
   async removeRecordsAsync(identities: RecordIdentity[]) {
+    const records = this.getRecordsAsync(identities);
     const idsByType = groupIdentitiesByType(identities);
     for (let type in idsByType) {
       await this.scopeForType(type)
         .whereIn('id', idsByType[type])
         .del();
     }
-    return identities;
+    return records;
   }
 
   async getRelatedRecordAsync(
@@ -253,7 +255,7 @@ export default class SQLCache extends AsyncRecordCache {
       ) {
         const type = relationships[relationship].model as string;
         const fields = this.getFieldsForType(type);
-        const result = await this.scopeForType(type)
+        const record = await this.scopeForType(type)
           .join(
             tableize(identity.type),
             `${tableize(type)}.id`,
@@ -261,7 +263,7 @@ export default class SQLCache extends AsyncRecordCache {
           )
           .where(`${tableize(identity.type)}.id`, identity.id)
           .first(fields);
-        resolve(result);
+        resolve(record);
       }
     });
   }
