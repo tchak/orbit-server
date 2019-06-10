@@ -37,6 +37,8 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
       });
     }
 
+    fastify.get('/schema', async () => ({ models: source.schema.models }));
+
     if (settings.jsonapi) {
       fastify.register(fastifyJSONAPI, { source, pubsub });
     }
