@@ -36,6 +36,15 @@ export default new Schema({
           inverse: 'moons'
         }
       }
+    },
+    typedModel: {
+      attributes: {
+        someText: { type: 'string' },
+        someNumber: { type: 'number' },
+        someDate: { type: 'date' },
+        someDateTime: { type: 'datetime' },
+        someBoolean: { type: 'boolean' }
+      }
     }
   }
 });

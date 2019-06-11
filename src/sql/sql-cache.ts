@@ -110,16 +110,32 @@ export default class SQLCache extends AsyncRecordCache {
 
   async registerModel(db: Knex, type: string) {
     const tableName = tableize(type);
-    const { attributes, relationships } = this.schema.getModel(type);
+    const { relationships } = this.schema.getModel(type);
 
     if (await db.schema.hasTable(tableName)) {
       await db.schema.alterTable(tableName, async table => {
-        for (let attribute in attributes) {
-          let columnName = underscore(attribute);
+        this.schema.eachAttribute(type, async (property, attribute) => {
+          let columnName = underscore(property);
           if (!(await db.schema.hasColumn(tableName, columnName))) {
-            table.string(columnName);
+            switch (attribute.type) {
+              case 'string':
+                table.string(columnName);
+                break;
+              case 'number':
+                table.integer(columnName);
+                break;
+              case 'boolean':
+                table.boolean(columnName);
+                break;
+              case 'date':
+                table.date(columnName);
+                break;
+              case 'datetime':
+                table.dateTime(columnName);
+                break;
+            }
           }
-        }
+        });
         for (let relationship in relationships) {
           let columnName = foreignKey(relationship);
           if (!(await db.schema.hasColumn(tableName, columnName))) {
@@ -134,12 +150,28 @@ export default class SQLCache extends AsyncRecordCache {
         table.uuid('id').primary();
         table.timestamps();
 
-        for (let attribute in attributes) {
-          if (!['updatedAt', 'createdAt'].includes(attribute)) {
-            let columnName = underscore(attribute);
-            table.string(columnName);
+        this.schema.eachAttribute(type, (property, attribute) => {
+          if (!['updatedAt', 'createdAt'].includes(property)) {
+            let columnName = underscore(property);
+            switch (attribute.type) {
+              case 'string':
+                table.string(columnName);
+                break;
+              case 'number':
+                table.integer(columnName);
+                break;
+              case 'boolean':
+                table.boolean(columnName);
+                break;
+              case 'date':
+                table.date(columnName);
+                break;
+              case 'datetime':
+                table.dateTime(columnName);
+                break;
+            }
           }
-        }
+        });
         for (let relationship in relationships) {
           let columnName = foreignKey(relationship);
           if (relationships[relationship].type === 'hasOne') {
@@ -402,11 +434,12 @@ function queryResultToRecord(
     relationships: {}
   };
 
-  context.schema.eachAttribute(context.type, property => {
+  context.schema.eachAttribute(context.type, (property, attribute) => {
     const propertyName = underscore(property);
     if (result[propertyName] != null) {
-      (record.attributes as Record<string, unknown>)[property] =
-        result[propertyName];
+      (record.attributes as Record<string, unknown>)[
+        property
+      ] = castAttributeValue(result[propertyName], attribute.type);
     }
   });
 
@@ -425,4 +458,11 @@ function queryResultToRecord(
   );
 
   return record;
+}
+
+function castAttributeValue(value: unknown, type?: string) {
+  if (type === 'boolean') {
+    return value === 1;
+  }
+  return value;
 }

@@ -120,6 +120,22 @@ export default function(subject: Subject) {
       assert.equal(response.body.data.length, 1);
     });
 
+    test('create typedModels', async function(assert: Assert) {
+      const { body } = await createTypedModel(subject.fastify);
+      const id = body.data.id;
+
+      const response = await request(subject.fastify, {
+        url: `/typed-models/${id}`
+      });
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(response.body.data.attributes, {
+        'some-text': 'Some text',
+        'some-number': 2,
+        'some-boolean': true
+      });
+    });
+
     test('operations', async function(assert: Assert) {
       const {
         body: {
@@ -284,6 +300,26 @@ export default function(subject: Subject) {
             }
           ]
         }
+      });
+    });
+
+    test('create typedModels', async function(assert: Assert) {
+      const { body } = await createTypedModel(subject.fastify);
+      const id = body.data.id;
+
+      const response = await request(subject.fastify, {
+        method: 'POST',
+        url: '/graphql',
+        payload: {
+          query: `{ typedModel(id: "${id}") { someText someNumber someBoolean } }`
+        }
+      });
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(response.body.data.typedModel, {
+        someText: 'Some text',
+        someNumber: 2,
+        someBoolean: true
       });
     });
   });
@@ -458,6 +494,23 @@ function operationsWithEarthAndMars(
           }
         }
       ]
+    }
+  });
+}
+
+function createTypedModel(fastify: FastifyInstance) {
+  return request(fastify, {
+    method: 'POST',
+    url: '/typed-models',
+    payload: {
+      data: {
+        type: 'typed-models',
+        attributes: {
+          'some-text': 'Some text',
+          'some-number': 2,
+          'some-boolean': true
+        }
+      }
     }
   });
 }

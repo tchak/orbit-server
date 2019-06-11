@@ -80,8 +80,25 @@ function createTypeDef(schema: Schema, type: string) {
   let typeDef = [`type ${classify(type)} {`];
   typeDef.push('  id: ID!');
 
-  schema.eachAttribute(type, property => {
-    typeDef.push(`  ${property}: String`);
+  schema.eachAttribute(type, (property, attribute) => {
+    switch (attribute.type) {
+      case 'string':
+        typeDef.push(`  ${property}: String`);
+        break;
+      case 'number':
+        typeDef.push(`  ${property}: Int`);
+        break;
+      case 'boolean':
+        typeDef.push(`  ${property}: Boolean`);
+        break;
+      default:
+        typeDef.push(`  ${property}: String`);
+      // case 'date':
+      //   typeDef.push(`  ${property}: Date`);
+      //   break;
+      // case 'datetime':
+      //   typeDef.push(`  ${property}: DateTime`);
+    }
   });
 
   schema.eachRelationship(type, (property, { model: type, type: kind }) => {

@@ -1,4 +1,5 @@
 import { JSONAPISerializer } from '@orbit/jsonapi';
+import { dasherize } from '@orbit/utils';
 import { PubSubEngine } from 'graphql-subscriptions';
 
 import Source from '../source';
@@ -38,10 +39,9 @@ export function buildJSONAPI(
   const routes: Record<string, RouteDefinition[]> = {};
 
   for (let type in config.source.schema.models) {
-    routes[config.source.schema.pluralize(type)] = buildJSONAPIResource(
-      type,
-      config
-    );
+    routes[
+      dasherize(config.source.schema.pluralize(type))
+    ] = buildJSONAPIResource(type, config);
   }
 
   routes['operations'] = [
@@ -94,7 +94,7 @@ function buildJSONAPIResource(
   ];
 
   config.source.schema.eachRelationship(type, (property, { type: kind }) => {
-    const url = `/:id/relationships/${property}`;
+    const url = `/:id/relationships/${dasherize(property)}`;
 
     if (kind === 'hasMany') {
       routes.push({
