@@ -166,7 +166,14 @@
   resolved "https://registry.yarnpkg.com/@types/events/-/events-3.0.0.tgz#2862f3f58a9a7f7c3e78d79f130dd4d71c25c2a7"
   integrity sha512-EaObqwIvayI5a8dCzhFrjKzVwKLxjoG9T6Ppd5CEo07LRKfQ8Yokw54r5+Wq7FaBQ+yXRvQAYPrHwya1/UFt9g==
 
-"@types/graphql@^14.2.0":
+"@types/graphql-iso-date@^3.3.1":
+  version "3.3.1"
+  resolved "https://registry.yarnpkg.com/@types/graphql-iso-date/-/graphql-iso-date-3.3.1.tgz#dbb540ae62c68c00eba1d1feb4602d7209257e9d"
+  integrity sha512-x64IejUTqiiC2NGMgMYVOsKgViKknfnhzJHS8pMiYdDqbR5Fd9XHAkujGYvAOBkjFB6TDunY6S8uLDT/OnrKBA==
+  dependencies:
+    "@types/graphql" "*"
+
+"@types/graphql@*", "@types/graphql@^14.2.0":
   version "14.2.0"
   resolved "https://registry.yarnpkg.com/@types/graphql/-/graphql-14.2.0.tgz#74e1da5f2a4a744ac6eb3ed57b48242ea9367202"
   integrity sha512-lELg5m6eBOmATWyCZl8qULEOvnPIUG6B443yXKj930glXIgwQirIBPp5rthP2amJW0YSzUg2s5sfgba4mRRCNw==
@@ -1591,6 +1598,11 @@ graphql-extensions@0.7.2:
   integrity sha512-TuVINuAOrEtzQAkAlCZMi9aP5rcZ+pVaqoBI5fD2k5O9fmb8OuXUQOW028MUhC66tg4E7h4YSF1uYUIimbu4SQ==
   dependencies:
     "@apollographql/apollo-tools" "^0.3.6"
+
+graphql-iso-date@^3.6.1:
+  version "3.6.1"
+  resolved "https://registry.yarnpkg.com/graphql-iso-date/-/graphql-iso-date-3.6.1.tgz#bd2d0dc886e0f954cbbbc496bbf1d480b57ffa96"
+  integrity sha512-AwFGIuYMJQXOEAgRlJlFL4H1ncFM8n8XmoVDTNypNOZyQ8LFDG2ppMFlsS862BSTCDcSUfHp8PD3/uJhv7t59Q==
 
 graphql-subscriptions@^1.0.0, graphql-subscriptions@^1.1.0:
   version "1.1.0"

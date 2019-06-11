@@ -7,6 +7,7 @@ import {
 import { deepGet, deepMerge } from '@orbit/utils';
 import DataLoader from 'dataloader';
 import { classify } from 'inflected';
+import { GraphQLDate, GraphQLDateTime } from 'graphql-iso-date';
 
 import Source from '../source';
 
@@ -38,8 +39,8 @@ export interface Context {
 }
 
 export function buildGraphQL(schema: Schema) {
-  const resolvers = { Query: {} };
-  const typeDef = [];
+  const resolvers = { Query: {}, Date: GraphQLDate, DateTime: GraphQLDateTime };
+  const typeDef = ['scalar Date', 'scalar DateTime'];
 
   for (let type in schema.models) {
     typeDef.push(createTypeDef(schema, type));
@@ -91,13 +92,12 @@ function createTypeDef(schema: Schema, type: string) {
       case 'boolean':
         typeDef.push(`  ${property}: Boolean`);
         break;
-      default:
-        typeDef.push(`  ${property}: String`);
-      // case 'date':
-      //   typeDef.push(`  ${property}: Date`);
-      //   break;
-      // case 'datetime':
-      //   typeDef.push(`  ${property}: DateTime`);
+      case 'date':
+        typeDef.push(`  ${property}: Date`);
+        break;
+      case 'datetime':
+        typeDef.push(`  ${property}: DateTime`);
+        break;
     }
   });
 
