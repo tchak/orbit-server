@@ -11,9 +11,6 @@ import {
   RecordIdentity,
   Record as OrbitRecord,
   Transform,
-  RecordNotFoundException,
-  RecordException,
-  SchemaError,
   RecordOperation
 } from '@orbit/data';
 import {
@@ -21,7 +18,7 @@ import {
   JSONAPISerializer,
   ResourceOperationsDocument
 } from '@orbit/jsonapi';
-import { uuid, toArray } from '@orbit/utils';
+import { toArray } from '@orbit/utils';
 import { Observable } from 'rxjs';
 
 import Source from '../source';
@@ -36,7 +33,7 @@ export interface Config {
 export type Handler = (
   req: DefaultRequest | OperationsRequest,
   reply: FastifyReply<OutgoingMessage>
-) => Promise<ResourceDocument | ErrorsDocument | OperationsResponseDocument>;
+) => Promise<ResourceDocument | OperationsResponseDocument>;
 type DefaultRequest = FastifyRequest<
   IncomingMessage,
   DefaultQuery,
@@ -101,7 +98,7 @@ export async function handleRemoveRecord(
 export async function handleFindRecord(
   { params, query }: DefaultRequest,
   reply: FastifyReply<OutgoingMessage>
-): Promise<ResourceDocument | ErrorsDocument> {
+): Promise<ResourceDocument> {
   const { type, source, serializer } = reply.context.config as Config;
   const { id } = params;
   const identity = { type, id };
@@ -109,12 +106,10 @@ export async function handleFindRecord(
     ? query.include
     : [query.include];
 
-  const result = await source
-    .query(q => q.findRecord(identity), {
-      include
-    })
-    .catch(error => handleException(error, reply));
-  return serializeResult(serializer, result, reply);
+  const record: OrbitRecord = await source.query(q => q.findRecord(identity), {
+    include
+  });
+  return serializer.serialize({ data: record });
 }
 
 export async function handleFindRecords(
@@ -301,65 +296,4 @@ export function observableFromAsyncIterator<T>(iterator: AsyncIterator<T>) {
       dispose = true;
     };
   });
-}
-
-function handleException(
-  error: Error,
-  reply: FastifyReply<OutgoingMessage>
-): ErrorsDocument {
-  const errors: ResourceError[] = [];
-
-  if (error instanceof RecordNotFoundException) {
-    errors.push({
-      id: uuid(),
-      title: error.message,
-      detail: error.description,
-      code: '404'
-    });
-    reply.status(404);
-  } else if (error instanceof SchemaError || error instanceof RecordException) {
-    errors.push({
-      id: uuid(),
-      title: error.message,
-      detail: error.description,
-      code: '500'
-    });
-    reply.status(500);
-  } else {
-    errors.push({
-      id: uuid(),
-      title: error.message,
-      detail: '',
-      code: '500'
-    });
-    reply.status(500);
-  }
-
-  return { errors };
-}
-
-function serializeResult(
-  serializer: JSONAPISerializer,
-  result: OrbitRecord | OrbitRecord[] | null | Error,
-  reply: FastifyReply<OutgoingMessage>
-) {
-  if (result instanceof Error) {
-    return handleException(result, reply);
-  } else if (Array.isArray(result)) {
-    return serializer.serialize({ data: result as OrbitRecord[] });
-  } else if (result) {
-    return serializer.serialize({ data: result as OrbitRecord });
-  }
-  return { data: [] };
-}
-
-interface ResourceError {
-  id: string;
-  title: string;
-  detail: string;
-  code: '400' | '404' | '500';
-}
-
-interface ErrorsDocument {
-  errors: ResourceError[];
 }
