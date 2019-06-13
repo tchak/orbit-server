@@ -35,7 +35,21 @@ module('Orbit Fastify Plugin schema', function(hooks: Hooks) {
     });
 
     assert.equal(response.status, 200);
-    assert.deepEqual(response.body, { models: source.schema.models });
+    assert.deepEqual(response.body, {
+      models: source.schema.models,
+      inflections: {
+        plurals: {
+          planet: 'planets',
+          moon: 'moons',
+          typedModel: 'typedModels'
+        },
+        singulars: {
+          planets: 'planet',
+          moons: 'moon',
+          typedModels: 'typedModel'
+        }
+      }
+    });
   });
 });
 

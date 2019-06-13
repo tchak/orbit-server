@@ -4,9 +4,8 @@ import {
   Record as OrbitRecord,
   serializeRecordIdentity
 } from '@orbit/data';
-import { deepGet, deepMerge } from '@orbit/utils';
+import { deepGet, deepMerge, camelize, capitalize } from '@orbit/utils';
 import DataLoader from 'dataloader';
-import { classify } from 'inflected';
 import { GraphQLDate, GraphQLDateTime } from 'graphql-iso-date';
 
 import Source from '../source';
@@ -171,4 +170,8 @@ function createResolvers(
       }
     }
   };
+}
+
+function classify(str: string) {
+  return capitalize(camelize(str));
 }
