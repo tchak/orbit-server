@@ -162,7 +162,7 @@ function createResolvers(
       },
       [schema.pluralize(type)]: (_, params: FindRecordsParams, { source }) => {
         if (params.ids) {
-          source.query(q =>
+          return source.query(q =>
             q.findRecords((params.ids as string[]).map(id => ({ type, id })))
           );
         }
