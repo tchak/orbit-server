@@ -2,11 +2,26 @@ import {
   Schema,
   RecordIdentity,
   Record as OrbitRecord,
-  serializeRecordIdentity
+  serializeRecordIdentity,
+  AttributeDefinition
 } from '@orbit/data';
-import { deepGet, deepMerge, camelize, capitalize } from '@orbit/utils';
-import DataLoader from 'dataloader';
+import { GraphQLSchema } from 'graphql/type/schema';
+import {
+  GraphQLObjectType,
+  GraphQLFieldConfig,
+  GraphQLList,
+  GraphQLNonNull,
+  GraphQLScalarType
+} from 'graphql/type/definition';
+import {
+  GraphQLString,
+  GraphQLID,
+  GraphQLInt,
+  GraphQLBoolean
+} from 'graphql/type/scalars';
 import { GraphQLDate, GraphQLDateTime } from 'graphql-iso-date';
+import { deepGet, camelize, capitalize } from '@orbit/utils';
+import DataLoader from 'dataloader';
 
 import Source from '../source';
 
@@ -21,11 +36,6 @@ interface FindRecordsParams extends Params {
   order?: string;
 }
 
-type Resolver = (
-  parent: OrbitRecord | null,
-  params: Params,
-  context: Context
-) => Promise<any>;
 type QueryResult = OrbitRecord | OrbitRecord[] | null;
 type getDataLoaderFn = (
   namespace: string,
@@ -37,29 +47,61 @@ export interface Context {
   getDataLoader: getDataLoaderFn;
 }
 
-export function buildGraphQL(schema: Schema) {
-  const resolvers = { Query: {}, Date: GraphQLDate, DateTime: GraphQLDateTime };
-  const typeDef = ['scalar Date', 'scalar DateTime'];
+export function makeExecutableSchema(schema: Schema): GraphQLSchema {
+  const types: Record<string, GraphQLObjectType> = {};
+  const fields = () => {
+    const fields: Record<
+      string,
+      GraphQLFieldConfig<null, Context, Params>
+    > = {};
 
-  for (let type in schema.models) {
-    typeDef.push(createTypeDef(schema, type));
-    deepMerge(resolvers, createResolvers(schema, type));
-  }
+    for (let type in schema.models) {
+      makeModelType(schema, type, types);
 
-  typeDef.push('type Query {');
-  for (let type in schema.models) {
-    typeDef.push(`  ${schema.pluralize(type)}: [${classify(type)}]!`);
-    typeDef.push(`  ${type}(id: ID!): ${classify(type)}`);
-  }
-  typeDef.push('}');
+      fields[type] = {
+        type: types[type],
+        args: {
+          id: {
+            type: new GraphQLNonNull(GraphQLID)
+          }
+        },
+        resolve(_, params: FindRecordParams, { source }) {
+          return source.query(q =>
+            q.findRecord({ type, id: params.id as string })
+          );
+        }
+      };
 
-  return {
-    typeDefs: typeDef.join('\n'),
-    resolvers
+      fields[schema.pluralize(type)] = {
+        type: new GraphQLNonNull(new GraphQLList(types[type])),
+        args: {
+          ids: {
+            type: new GraphQLList(GraphQLID)
+          }
+        },
+        resolve(_, params: FindRecordsParams, { source }) {
+          if (params.ids) {
+            return source.query(q =>
+              q.findRecords((params.ids as string[]).map(id => ({ type, id })))
+            );
+          }
+          return source.query(q => q.findRecords(type));
+        }
+      };
+    }
+
+    return fields;
   };
+
+  const Query = new GraphQLObjectType({
+    name: 'Query',
+    fields
+  });
+
+  return new GraphQLSchema({ query: Query });
 }
 
-export function createDataLoaders() {
+export function createDataLoaders(): getDataLoaderFn {
   const dataLoaders = new Map();
   return (
     namespace: string,
@@ -76,102 +118,98 @@ export function createDataLoaders() {
   };
 }
 
-function createTypeDef(schema: Schema, type: string) {
-  let typeDef = [`type ${classify(type)} {`];
-  typeDef.push('  id: ID!');
-
-  schema.eachAttribute(type, (property, attribute) => {
-    switch (attribute.type) {
-      case 'string':
-        typeDef.push(`  ${property}: String`);
-        break;
-      case 'number':
-        typeDef.push(`  ${property}: Int`);
-        break;
-      case 'boolean':
-        typeDef.push(`  ${property}: Boolean`);
-        break;
-      case 'date':
-        typeDef.push(`  ${property}: Date`);
-        break;
-      case 'datetime':
-        typeDef.push(`  ${property}: DateTime`);
-        break;
-    }
-  });
-
-  schema.eachRelationship(type, (property, { model: type, type: kind }) => {
-    let relatedType = classify(type as string);
-    if (kind === 'hasMany') {
-      typeDef.push(`  ${property}: [${relatedType}]!`);
-    } else {
-      typeDef.push(`  ${property}: ${relatedType}`);
-    }
-  });
-
-  typeDef.push('}');
-
-  return typeDef.join('\n');
-}
-
-function createResolvers(
+function makeModelType(
   schema: Schema,
-  type: string
-): Record<string, Record<string, Resolver>> {
+  type: string,
+  types: Record<string, GraphQLObjectType>
+): GraphQLObjectType<RecordIdentity, Context> {
   const typeClassName = classify(type);
-  const resolver: Record<string, Resolver> = {};
+  const fields = () => {
+    const fields: Record<
+      string,
+      GraphQLFieldConfig<RecordIdentity, Context>
+    > = {
+      id: { type: new GraphQLNonNull(GraphQLID) }
+    };
 
-  schema.eachAttribute(type, property => {
-    resolver[property] = (parent: OrbitRecord) =>
-      deepGet(parent, ['attributes', property]);
-  });
-
-  schema.eachRelationship(type, (property, { type: kind }) => {
-    let namespace = `${typeClassName}.${property}`;
-
-    if (kind === 'hasMany') {
-      resolver[property] = (parent, _, { source, getDataLoader }) => {
-        return getDataLoader(namespace, (records: OrbitRecord[]) => {
-          return Promise.all(
-            records.map(record =>
-              source.query(q => q.findRelatedRecords(record, property))
-            )
-          );
-        }).load(parent as RecordIdentity);
+    schema.eachAttribute(type, (property, attribute) => {
+      fields[property] = {
+        type: getAttributeGraphQLType(attribute),
+        resolve: parent => deepGet(parent, ['attributes', property])
       };
-    } else {
-      resolver[property] = (parent, _, { source, getDataLoader }) => {
-        return getDataLoader(namespace, (records: OrbitRecord[]) => {
-          return Promise.all(
-            records.map(record =>
-              source.query(q => q.findRelatedRecord(record, property))
-            )
-          );
-        }).load(parent as RecordIdentity);
-      };
-    }
-  });
+    });
 
-  return {
-    [typeClassName]: resolver,
-    Query: {
-      [type]: (_, params: FindRecordParams, { source }) => {
-        return source.query(q =>
-          q.findRecord({ type, id: params.id as string })
-        );
-      },
-      [schema.pluralize(type)]: (_, params: FindRecordsParams, { source }) => {
-        if (params.ids) {
-          return source.query(q =>
-            q.findRecords((params.ids as string[]).map(id => ({ type, id })))
-          );
-        }
-        return source.query(q => q.findRecords(type));
+    schema.eachRelationship(type, (property, { type: kind, model: type }) => {
+      let namespace = `${typeClassName}.${property}`;
+
+      if (!type) {
+        throw new Error(`Type missing on "${namespace}" relationship`);
       }
-    }
+      if (Array.isArray(type)) {
+        throw new Error(`Polymorphic types are not supported yet`);
+      }
+
+      if (kind === 'hasMany') {
+        fields[property] = {
+          type: new GraphQLNonNull(new GraphQLList(types[type])),
+          resolve: (parent, _, { source, getDataLoader }) => {
+            return getDataLoader(namespace, (records: OrbitRecord[]) => {
+              return Promise.all(
+                records.map(record =>
+                  source.query(q => q.findRelatedRecords(record, property))
+                )
+              );
+            }).load(parent);
+          }
+        };
+      } else {
+        fields[property] = {
+          type: types[type],
+          resolve: (parent, _, { source, getDataLoader }) => {
+            return getDataLoader(namespace, (records: OrbitRecord[]) => {
+              return Promise.all(
+                records.map(record =>
+                  source.query(q => q.findRelatedRecord(record, property))
+                )
+              );
+            }).load(parent);
+          }
+        };
+      }
+    });
+
+    return fields;
   };
+
+  const ModelType = new GraphQLObjectType({
+    name: typeClassName,
+    fields
+  });
+
+  types[type] = ModelType;
+
+  return ModelType;
 }
 
-function classify(str: string) {
+function getAttributeGraphQLType(
+  attribute: AttributeDefinition
+): GraphQLScalarType {
+  switch (attribute.type) {
+    case 'string':
+      return GraphQLString;
+    case 'number':
+      return GraphQLInt;
+    case 'boolean':
+      return GraphQLBoolean;
+    case 'date':
+      return GraphQLDate;
+    case 'datetime':
+      return GraphQLDateTime;
+    default:
+      throw new Error(`Unknown type "${attribute.type}"`);
+  }
+}
+
+function classify(str: string): string {
   return capitalize(camelize(str));
 }
