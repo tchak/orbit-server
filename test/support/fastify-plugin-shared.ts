@@ -22,7 +22,13 @@ export default function(subject: Subject) {
       assert.equal(response.status, 200);
       assert.equal(response.body.data.type, 'planets');
       assert.ok(response.body.data.id);
-      assert.deepEqual(response.body.data.attributes, { name: 'Earth' });
+      assert.deepEqual(
+        response.body.data.attributes,
+        compact({
+          name: 'Earth',
+          'created-at': response.body.data.attributes['created-at']
+        })
+      );
     });
 
     test('get planets', async function(assert: Assert) {
@@ -43,9 +49,10 @@ export default function(subject: Subject) {
       assert.deepEqual(response.body.data, {
         type: 'planets',
         id,
-        attributes: {
-          name: 'Earth'
-        }
+        attributes: compact({
+          name: 'Earth',
+          'created-at': response.body.data.attributes['created-at']
+        })
       });
     });
 
@@ -78,9 +85,10 @@ export default function(subject: Subject) {
       assert.deepEqual(data, {
         type: 'planets',
         id,
-        attributes: {
-          name: 'Earth 2'
-        }
+        attributes: compact({
+          name: 'Earth 2',
+          'created-at': data.attributes['created-at']
+        })
       });
     });
 
@@ -167,9 +175,11 @@ export default function(subject: Subject) {
             data: compact({
               type: 'planets',
               id: earthId,
-              attributes: {
-                name: 'Beautiful Earth'
-              },
+              attributes: compact({
+                name: 'Beautiful Earth',
+                'created-at':
+                  response.body.operations[0].data.attributes['created-at']
+              }),
               relationships: response.body.operations[0].data.relationships
             })
           },
@@ -212,9 +222,11 @@ export default function(subject: Subject) {
             data: {
               type: 'planets',
               id: marsId,
-              attributes: {
-                name: 'Mars'
-              },
+              attributes: compact({
+                name: 'Mars',
+                'created-at':
+                  response.body.operations[4].data.attributes['created-at']
+              }),
               relationships: {
                 moons: {
                   data: [

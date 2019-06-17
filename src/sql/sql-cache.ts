@@ -16,6 +16,8 @@ import {
 import Knex from 'knex';
 import { underscore, foreignKey, tableize } from 'inflected';
 
+const UPDATED_AT = 'updated_at';
+
 export interface SQLCacheSettings extends AsyncRecordCacheSettings {
   knex: Knex.Config;
 }
@@ -148,7 +150,7 @@ export default class SQLCache extends AsyncRecordCache {
     } else {
       await db.schema.createTable(tableName, table => {
         table.uuid('id').primary();
-        table.timestamps();
+        table.timestamps(true, true);
 
         this.schema.eachAttribute(type, (property, attribute) => {
           if (!['updatedAt', 'createdAt'].includes(property)) {
@@ -242,9 +244,10 @@ export default class SQLCache extends AsyncRecordCache {
         .where('id', id)
         .first('id')
     ) {
+      const now = this._db.raw('CURRENT_TIMESTAMP');
       await this.scopeForType(record.type)
         .where({ id })
-        .update(properties);
+        .update({ ...properties, [UPDATED_AT]: now });
     } else {
       await this.scopeForType(record.type).insert({ id, ...properties });
     }
@@ -461,8 +464,13 @@ function queryResultToRecord(
 }
 
 function castAttributeValue(value: unknown, type?: string) {
+  const typeOfValue = typeof value;
+  const isString = typeOfValue === 'string';
+  const isNumber = typeOfValue === 'number';
   if (type === 'boolean') {
     return value === 1;
+  } else if (type === 'datetime' && (isString || isNumber)) {
+    return new Date(value as string | number);
   }
   return value;
 }
