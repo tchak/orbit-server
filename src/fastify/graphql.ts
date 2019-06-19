@@ -4,7 +4,7 @@ import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import { ApolloServer, PubSubEngine } from 'apollo-server-fastify';
 
 import Source from '../source';
-import { makeExecutableSchema, createDataLoaders, Context } from '../graphql';
+import { makeExecutableSchema, Context } from '../graphql';
 
 interface GraphQLFastifySettings {
   source: Source;
@@ -21,10 +21,7 @@ export default plugin<
   const apollo = new ApolloServer({
     schema,
     context: (): Context => {
-      return {
-        source,
-        getDataLoader: createDataLoaders()
-      };
+      return { source };
     }
   });
 

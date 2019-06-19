@@ -37,14 +37,9 @@ interface FindRecordsParams extends Params {
 }
 
 type QueryResult = OrbitRecord | OrbitRecord[] | null;
-type getDataLoaderFn = (
-  namespace: string,
-  batchLoadFn: DataLoader.BatchLoadFn<RecordIdentity, QueryResult>
-) => DataLoader<RecordIdentity, QueryResult>;
 
 export interface Context {
   source: Source;
-  getDataLoader: getDataLoaderFn;
 }
 
 export function makeExecutableSchema(schema: Schema): GraphQLSchema {
@@ -101,23 +96,6 @@ export function makeExecutableSchema(schema: Schema): GraphQLSchema {
   return new GraphQLSchema({ query: Query });
 }
 
-export function createDataLoaders(): getDataLoaderFn {
-  const dataLoaders = new Map();
-  return (
-    namespace: string,
-    batchLoadFn: DataLoader.BatchLoadFn<RecordIdentity, QueryResult>
-  ) => {
-    let dataLoader = dataLoaders.get(namespace);
-    if (!dataLoader) {
-      dataLoader = new DataLoader(batchLoadFn, {
-        cacheKeyFn: serializeRecordIdentity
-      });
-      dataLoaders.set(namespace, dataLoader);
-    }
-    return dataLoader;
-  };
-}
-
 function makeModelType(
   schema: Schema,
   type: string,
@@ -152,27 +130,39 @@ function makeModelType(
       if (kind === 'hasMany') {
         fields[property] = {
           type: new GraphQLNonNull(new GraphQLList(types[type])),
-          resolve: (parent, _, { source, getDataLoader }) => {
-            return getDataLoader(namespace, (records: OrbitRecord[]) => {
-              return Promise.all(
-                records.map(record =>
-                  source.query(q => q.findRelatedRecords(record, property))
-                )
-              );
-            }).load(parent);
+          resolve: (parent, _, context) => {
+            return getDataLoader(
+              context,
+              namespace,
+              (records: OrbitRecord[]) => {
+                return Promise.all(
+                  records.map(record =>
+                    context.source.query(q =>
+                      q.findRelatedRecords(record, property)
+                    )
+                  )
+                );
+              }
+            ).load(parent);
           }
         };
       } else {
         fields[property] = {
           type: types[type],
-          resolve: (parent, _, { source, getDataLoader }) => {
-            return getDataLoader(namespace, (records: OrbitRecord[]) => {
-              return Promise.all(
-                records.map(record =>
-                  source.query(q => q.findRelatedRecord(record, property))
-                )
-              );
-            }).load(parent);
+          resolve: (parent, _, context) => {
+            return getDataLoader(
+              context,
+              namespace,
+              (records: OrbitRecord[]) => {
+                return Promise.all(
+                  records.map(record =>
+                    context.source.query(q =>
+                      q.findRelatedRecord(record, property)
+                    )
+                  )
+                );
+              }
+            ).load(parent);
           }
         };
       }
@@ -189,6 +179,10 @@ function makeModelType(
   types[type] = ModelType;
 
   return ModelType;
+}
+
+function classify(str: string): string {
+  return capitalize(camelize(str));
 }
 
 function getAttributeGraphQLType(
@@ -210,6 +204,29 @@ function getAttributeGraphQLType(
   }
 }
 
-function classify(str: string): string {
-  return capitalize(camelize(str));
+function getDataLoader(
+  context: object,
+  namespace: string,
+  batchLoadFn: DataLoader.BatchLoadFn<RecordIdentity, QueryResult>
+): DataLoader<RecordIdentity, QueryResult> {
+  const dataLoaderMap = dataLoaderMapFor(context);
+  let dataLoader = dataLoaderMap.get(namespace);
+  if (!dataLoader) {
+    dataLoader = new DataLoader(batchLoadFn, {
+      cacheKeyFn: serializeRecordIdentity
+    });
+    dataLoaderMap.set(namespace, dataLoader);
+  }
+  return dataLoader;
 }
+
+function dataLoaderMapFor(context: object) {
+  let dataLoaderMap = dataLoaderMapForContext.get(context);
+  if (!dataLoaderMap) {
+    dataLoaderMap = new Map();
+    dataLoaderMapForContext.set(context, dataLoaderMap);
+  }
+  return dataLoaderMap;
+}
+
+const dataLoaderMapForContext = new WeakMap();
