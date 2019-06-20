@@ -102,48 +102,73 @@ export async function handleFindRecord(
   const { type, source, serializer } = reply.context.config as Config;
   const { id } = params;
   const identity = { type, id };
-  const include: string[] = Array.isArray(query.include)
-    ? query.include
-    : [query.include];
+  const include: string[] = query.include
+    ? Array.isArray(query.include)
+      ? query.include
+      : [query.include]
+    : [];
 
   const record: OrbitRecord = await source.query(q => q.findRecord(identity), {
-    include
+    [source.name]: { include }
   });
   return serializer.serialize({ data: record });
 }
 
 export async function handleFindRecords(
-  _: DefaultRequest,
+  { query }: DefaultRequest,
   { context }: FastifyReply<OutgoingMessage>
 ): Promise<ResourceDocument> {
   const { type, source, serializer } = context.config as Config;
+  const include: string[] = query.include
+    ? Array.isArray(query.include)
+      ? query.include
+      : [query.include]
+    : [];
 
-  const records: OrbitRecord[] = await source.query(q => q.findRecords(type));
+  const records: OrbitRecord[] = await source.query(q => q.findRecords(type), {
+    [source.name]: { include }
+  });
   return serializer.serialize({ data: records });
 }
 
 export async function handleFindRelatedRecords(
-  { params }: DefaultRequest,
+  { params, query }: DefaultRequest,
   { context }: FastifyReply<OutgoingMessage>
 ): Promise<ResourceDocument> {
   const { type, relationship, source, serializer } = context.config as Config;
   const { id } = params;
+  const include: string[] = query.include
+    ? Array.isArray(query.include)
+      ? query.include
+      : [query.include]
+    : [];
 
-  const records: OrbitRecord[] = await source.query(q =>
-    q.findRelatedRecords({ type, id }, relationship as string)
+  const records: OrbitRecord[] = await source.query(
+    q => q.findRelatedRecords({ type, id }, relationship as string),
+    {
+      [source.name]: { include }
+    }
   );
   return serializer.serialize({ data: records });
 }
 
 export async function handleFindRelatedRecord(
-  { params }: DefaultRequest,
+  { params, query }: DefaultRequest,
   { context }: FastifyReply<OutgoingMessage>
 ): Promise<ResourceDocument> {
   const { type, relationship, source, serializer } = context.config as Config;
   const { id } = params;
+  const include: string[] = query.include
+    ? Array.isArray(query.include)
+      ? query.include
+      : [query.include]
+    : [];
 
-  const record: OrbitRecord = await source.query(q =>
-    q.findRelatedRecord({ type, id }, relationship as string)
+  const record: OrbitRecord = await source.query(
+    q => q.findRelatedRecord({ type, id }, relationship as string),
+    {
+      [source.name]: { include }
+    }
   );
   return serializer.serialize({ data: record });
 }
