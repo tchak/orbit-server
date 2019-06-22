@@ -24,45 +24,61 @@ interface ResourceError {
   id: string;
   title: string;
   detail: string;
-  code: string;
+  code: HTTPStatus;
 }
 
 interface ErrorsDocument {
   errors: ResourceError[];
 }
 
-export interface Params {
+export interface DefaultParams {
   type: string;
   id?: string;
   relationship?: string;
   include?: string | string[];
 }
 
-export interface ResourceParams extends Params {
+export interface ResourceParams extends DefaultParams {
   id: string;
 }
 
-export interface RelationshipParams extends Params {
+export interface RelationshipParams extends DefaultParams {
   id: string;
   relationship: string;
 }
 
-export interface JSONAPIRequest<T = Params> {
-  params: T;
-  headers: Record<string, string>;
+type Headers = Record<string, string>;
+
+export interface JSONAPIRequest<Params = DefaultParams> {
+  params: Params;
+  headers: Headers;
   context: Context;
   body: ResourceDocument;
 }
 
 export interface JSONAPIOperationsRequest {
-  params: Params;
-  headers: Record<string, string>;
+  params: DefaultParams;
+  headers: Headers;
   context: Context;
   body: ResourceOperationsDocument;
 }
 
-type HTTPStatus = number;
-type Headers = Record<string, string>;
+enum HTTPMethods {
+  Get = 'GET',
+  Post = 'POST',
+  Patch = 'PATCH',
+  Delete = 'DELETE'
+}
+
+enum HTTPStatus {
+  Ok = 200,
+  Created = 201,
+  NoContent = 204,
+  BadRequest = 400,
+  NotFound = 404,
+  InternalServerError = 500
+}
+
 export type JSONAPIResponse<Body = ResourceDocument> = [
   HTTPStatus,
   Headers,
@@ -72,7 +88,7 @@ export type JSONAPIResponse<Body = ResourceDocument> = [
 export type Handler = (request: JSONAPIRequest) => Promise<JSONAPIResponse>;
 
 export interface RouteDefinition {
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method: HTTPMethods;
   url: string;
   params: { type: string; relationship?: string };
   handler: Handler;
@@ -83,8 +99,8 @@ export interface JSONAPIServerSettings {
 }
 
 export class JSONAPIServer {
-  schema: Schema;
-  serializer: JSONAPISerializer;
+  readonly schema: Schema;
+  protected readonly serializer: JSONAPISerializer;
 
   constructor(settings: JSONAPIServerSettings) {
     this.schema = settings.schema;
@@ -101,7 +117,7 @@ export class JSONAPIServer {
 
     callback('operations', [
       {
-        method: 'PATCH',
+        method: HTTPMethods.Patch,
         url: '/',
         params: { type: 'operations' },
         handler: this.handleOperations.bind(this)
@@ -113,50 +129,50 @@ export class JSONAPIServer {
     const id = this.schema.generateId();
     const title = error.message;
     let detail = '';
-    let code = 500;
+    let code = HTTPStatus.InternalServerError;
 
     if (error instanceof RecordNotFoundException) {
       detail = error.description;
-      code = 404;
+      code = HTTPStatus.NotFound;
     } else if (
       error instanceof SchemaError ||
       error instanceof RecordException
     ) {
       detail = error.description;
-      code = 400;
+      code = HTTPStatus.BadRequest;
     }
 
-    return [code, { errors: [{ id, title, detail, code: `${code}` }] }];
+    return [code, { errors: [{ id, title, detail, code }] }];
   }
 
   protected resourceRoutes(type: string): RouteDefinition[] {
     const routes: RouteDefinition[] = [
       {
-        method: 'GET',
+        method: HTTPMethods.Get,
         url: '/',
         params: { type },
         handler: this.handleFindRecords.bind(this)
       },
       {
-        method: 'POST',
+        method: HTTPMethods.Post,
         url: '/',
         params: { type },
         handler: this.handleAddRecord.bind(this)
       },
       {
-        method: 'GET',
+        method: HTTPMethods.Get,
         url: `/:id`,
         params: { type },
         handler: this.handleFindRecord.bind(this)
       },
       {
-        method: 'PATCH',
+        method: HTTPMethods.Patch,
         url: `/:id`,
         params: { type },
         handler: this.handleUpdateRecord.bind(this)
       },
       {
-        method: 'DELETE',
+        method: HTTPMethods.Delete,
         url: `/:id`,
         params: { type },
         handler: this.handleRemoveRecord.bind(this)
@@ -168,38 +184,38 @@ export class JSONAPIServer {
 
       if (kind === 'hasMany') {
         routes.push({
-          method: 'GET',
+          method: HTTPMethods.Get,
           url: `/:id/${property}`,
           params: { type, relationship: property },
           handler: this.handleFindRelatedRecords.bind(this)
         });
         routes.push({
-          method: 'POST',
+          method: HTTPMethods.Post,
           url,
           params: { type, relationship: property },
           handler: this.handleAddToRelatedRecords.bind(this)
         });
         routes.push({
-          method: 'DELETE',
+          method: HTTPMethods.Delete,
           url,
           params: { type, relationship: property },
           handler: this.handleRemoveFromRelatedRecords.bind(this)
         });
         routes.push({
-          method: 'PATCH',
+          method: HTTPMethods.Patch,
           url,
           params: { type, relationship: property },
           handler: this.handleReplaceRelatedRecords.bind(this)
         });
       } else {
         routes.push({
-          method: 'GET',
+          method: HTTPMethods.Get,
           url: `/:id/${property}`,
           params: { type, relationship: property },
           handler: this.handleFindRelatedRecord.bind(this)
         });
         routes.push({
-          method: 'PATCH',
+          method: HTTPMethods.Patch,
           url,
           params: { type, relationship: property },
           handler: this.handleReplaceRelatedRecord.bind(this)
@@ -220,7 +236,7 @@ export class JSONAPIServer {
     const options = transformOptions(headers);
 
     await source.update(q => q.updateRecord(data as OrbitRecord), options);
-    return [204, {}, null];
+    return [HTTPStatus.NoContent, {}, null];
   }
 
   protected async handleRemoveRecord({
@@ -232,7 +248,7 @@ export class JSONAPIServer {
     const options = transformOptions(headers);
 
     await source.update(q => q.removeRecord({ id, type }), options);
-    return [204, {}, null];
+    return [HTTPStatus.NoContent, {}, null];
   }
 
   protected async handleFindRecord({
@@ -247,7 +263,7 @@ export class JSONAPIServer {
         [source.name]: { include: normalizeInclude(include) }
       }
     );
-    return [200, {}, this.serializer.serialize({ data: record })];
+    return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: record })];
   }
 
   protected async handleAddRecord({
@@ -262,7 +278,11 @@ export class JSONAPIServer {
       q => q.addRecord(data as OrbitRecord),
       options
     );
-    return [201, {}, this.serializer.serialize({ data: record })];
+    return [
+      HTTPStatus.Created,
+      {},
+      this.serializer.serialize({ data: record })
+    ];
   }
 
   protected async handleFindRecords({
@@ -277,7 +297,7 @@ export class JSONAPIServer {
         [source.name]: { include: normalizeInclude(include) }
       }
     );
-    return [200, {}, this.serializer.serialize({ data: records })];
+    return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: records })];
   }
 
   protected async handleFindRelatedRecords({
@@ -292,7 +312,7 @@ export class JSONAPIServer {
         [source.name]: { include: normalizeInclude(include) }
       }
     );
-    return [200, {}, this.serializer.serialize({ data: records })];
+    return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: records })];
   }
 
   protected async handleFindRelatedRecord({
@@ -307,7 +327,7 @@ export class JSONAPIServer {
         [source.name]: { include: normalizeInclude(include) }
       }
     );
-    return [200, {}, this.serializer.serialize({ data: record })];
+    return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: record })];
   }
 
   protected async handleAddToRelatedRecords({
@@ -326,7 +346,7 @@ export class JSONAPIServer {
         options
       );
     }
-    return [204, {}, null];
+    return [HTTPStatus.NoContent, {}, null];
   }
 
   protected async handleRemoveFromRelatedRecords({
@@ -345,7 +365,7 @@ export class JSONAPIServer {
         options
       );
     }
-    return [204, {}, null];
+    return [HTTPStatus.NoContent, {}, null];
   }
 
   protected async handleReplaceRelatedRecords({
@@ -367,7 +387,7 @@ export class JSONAPIServer {
         ),
       options
     );
-    return [204, {}, null];
+    return [HTTPStatus.NoContent, {}, null];
   }
 
   protected async handleReplaceRelatedRecord({
@@ -389,7 +409,7 @@ export class JSONAPIServer {
         ),
       options
     );
-    return [204, {}, null];
+    return [HTTPStatus.NoContent, {}, null];
   }
 
   protected async handleOperations({
@@ -407,7 +427,7 @@ export class JSONAPIServer {
     }
     const result: OrbitRecord[] = toArray(await source.update(operations));
     return [
-      200,
+      HTTPStatus.Ok,
       {},
       {
         operations: result.map(data => this.serializer.serialize({ data }))
