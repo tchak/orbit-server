@@ -19,7 +19,7 @@ export default function(subject: Subject) {
     test('create planet', async function(assert: Assert) {
       const response = await createEarth(subject.fastify);
 
-      assert.equal(response.status, 200);
+      assert.equal(response.status, 201);
       assert.equal(response.body.data.type, 'planets');
       assert.ok(response.body.data.id);
       assert.deepEqual(
@@ -74,7 +74,7 @@ export default function(subject: Subject) {
         }
       });
 
-      assert.equal(response.status, 200);
+      assert.equal(response.status, 204);
 
       const {
         status,
@@ -101,7 +101,7 @@ export default function(subject: Subject) {
         url: `/planets/${id}`
       });
 
-      assert.equal(response.status, 200);
+      assert.equal(response.status, 204);
 
       const { status } = await getPlanet(subject.fastify, id);
 
@@ -114,7 +114,7 @@ export default function(subject: Subject) {
 
       const response = await createMoon(subject.fastify, id);
 
-      assert.equal(response.status, 200);
+      assert.equal(response.status, 201);
     });
 
     test('get planet moons', async function(assert: Assert) {

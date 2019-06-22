@@ -39,6 +39,7 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
     fastify.register(cors);
 
     const { source, pubsub } = settings;
+    const context = { source, pubsub };
 
     if (pubsub) {
       fastify.register(websocket);
@@ -55,11 +56,11 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
     fastify.get('/schema', async () => schemaJson);
 
     if (settings.jsonapi) {
-      fastify.register(fastifyJSONAPI, { source, pubsub });
+      fastify.register(fastifyJSONAPI, { context });
     }
 
     if (settings.graphql) {
-      fastify.register(fastifyGraphQL, { source, pubsub });
+      fastify.register(fastifyGraphQL, { context });
     }
 
     fastify.addHook('onClose', (_, done) => source.disconnect().then(done));

@@ -23,7 +23,7 @@ import { GraphQLDate, GraphQLDateTime } from 'graphql-iso-date';
 import { deepGet, camelize, capitalize } from '@orbit/utils';
 import DataLoader from 'dataloader';
 
-import Source from '../source';
+import Context from '../context';
 
 interface Params {}
 
@@ -37,10 +37,6 @@ interface FindRecordsParams extends Params {
 }
 
 type QueryResult = OrbitRecord | OrbitRecord[] | null;
-
-export interface Context {
-  source: Source;
-}
 
 export function makeExecutableSchema(schema: Schema): GraphQLSchema {
   const types: Record<string, GraphQLObjectType> = {};

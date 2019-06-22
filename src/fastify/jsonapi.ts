@@ -1,21 +1,12 @@
 import { FastifyInstance, RouteOptions } from 'fastify';
 import plugin from 'fastify-plugin';
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
-import { JSONAPISerializer } from '@orbit/jsonapi';
-import { PubSubEngine } from 'graphql-subscriptions';
-import {
-  RecordNotFoundException,
-  SchemaError,
-  RecordException,
-  Schema
-} from '@orbit/data';
 
-import Source from '../source';
-import { buildJSONAPI, RouteDefinition, Context } from '../jsonapi';
+import Context from '../context';
+import { JSONAPIServer, RouteDefinition } from '../jsonapi';
 
 interface JSONAPIFastifySettings {
-  source: Source;
-  pubsub?: PubSubEngine;
+  context: Context;
 }
 
 export default plugin<
@@ -23,25 +14,23 @@ export default plugin<
   IncomingMessage,
   OutgoingMessage,
   JSONAPIFastifySettings
->(function(fastify: FastifyInstance, { source, pubsub }, next) {
-  const serializer = new JSONAPISerializer({ schema: source.schema });
-  const context = { source, serializer, pubsub };
-  const routes = buildJSONAPI(source.schema);
+>(function(fastify: FastifyInstance, { context }, next) {
+  const server = new JSONAPIServer({ schema: context.source.schema });
 
-  for (let prefix in routes) {
+  server.eachRoute((prefix, routes) => {
     fastify.register(
       (fastify, _, next) => {
-        for (let route of routes[prefix]) {
+        for (let route of routes) {
           fastify.route(toFastifyRouteOptions(route, context));
         }
         next();
       },
       { prefix }
     );
-  }
+  });
 
   fastify.setErrorHandler(async (error, _, reply) => {
-    const [status, body] = handleException(source.schema, error);
+    const [status, body] = server.handleError(error);
     reply.status(status);
     return body;
   });
@@ -50,58 +39,25 @@ export default plugin<
 });
 
 function toFastifyRouteOptions(
-  { url, method, config, handler }: RouteDefinition,
+  { url, method, params, handler }: RouteDefinition,
   context: Context
 ): RouteOptions<Server, IncomingMessage, OutgoingMessage> {
+  const { type, relationship } = params;
   return {
     url,
     method,
-    config,
-    handler(
-      { params: { id }, query: { include }, headers, body },
-      {
-        context: {
-          config: { type, relationship }
-        }
-      }
-    ) {
-      return handler({
+    async handler({ params: { id }, query, headers, body }, reply) {
+      const { include } = query;
+
+      const [status, responseHeaders, responseBody] = await handler({
         headers,
         params: { type, id, relationship, include },
         body,
         context
       });
+      reply.status(status);
+      reply.headers(responseHeaders);
+      return responseBody;
     }
   };
-}
-
-function handleException(
-  schema: Schema,
-  error: Error
-): [number, ErrorsDocument] {
-  const id = schema.generateId();
-  const title = error.message;
-  let detail = '';
-  let code = 500;
-
-  if (error instanceof RecordNotFoundException) {
-    detail = error.description;
-    code = 404;
-  } else if (error instanceof SchemaError || error instanceof RecordException) {
-    detail = error.description;
-    code = 400;
-  }
-
-  return [code, { errors: [{ id, title, detail, code: `${code}` }] }];
-}
-
-interface ResourceError {
-  id: string;
-  title: string;
-  detail: string;
-  code: string;
-}
-
-interface ErrorsDocument {
-  errors: ResourceError[];
 }

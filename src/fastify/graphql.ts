@@ -1,14 +1,13 @@
 import { FastifyInstance } from 'fastify';
 import plugin from 'fastify-plugin';
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
-import { ApolloServer, PubSubEngine } from 'apollo-server-fastify';
+import { ApolloServer } from 'apollo-server-fastify';
 
-import Source from '../source';
-import { makeExecutableSchema, Context } from '../graphql';
+import Context from '../context';
+import { makeExecutableSchema } from '../graphql';
 
 interface GraphQLFastifySettings {
-  source: Source;
-  pubsub?: PubSubEngine;
+  context: Context;
 }
 
 export default plugin<
@@ -16,13 +15,11 @@ export default plugin<
   IncomingMessage,
   OutgoingMessage,
   GraphQLFastifySettings
->(function(fastify: FastifyInstance, { source }, next) {
-  const schema = makeExecutableSchema(source.schema);
+>(function(fastify: FastifyInstance, { context }, next) {
+  const schema = makeExecutableSchema(context.source.schema);
   const apollo = new ApolloServer({
     schema,
-    context: (): Context => {
-      return { source };
-    }
+    context
   });
 
   fastify.register(apollo.createHandler());
