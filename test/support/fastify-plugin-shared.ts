@@ -144,6 +144,14 @@ export default function(subject: Subject) {
       });
     });
 
+    test('many to many', async function(assert: Assert) {
+      const { body } = await createTag(subject.fastify);
+      const id = body.data.id;
+
+      const response = await createArticle(subject.fastify, id);
+      assert.equal(response.status, 201);
+    });
+
     test('operations', async function(assert: Assert) {
       const {
         body: {
@@ -521,6 +529,40 @@ function createTypedModel(fastify: FastifyInstance) {
           'some-text': 'Some text',
           'some-number': 2,
           'some-boolean': true
+        }
+      }
+    }
+  });
+}
+
+function createTag(fastify: FastifyInstance) {
+  return request(fastify, {
+    method: 'POST',
+    url: '/tags',
+    payload: {
+      data: {
+        type: 'tags'
+      }
+    }
+  });
+}
+
+function createArticle(fastify: FastifyInstance, tagId: string) {
+  return request(fastify, {
+    method: 'POST',
+    url: '/articles',
+    payload: {
+      data: {
+        type: 'articles',
+        relationships: {
+          tags: {
+            data: [
+              {
+                type: 'tags',
+                id: tagId
+              }
+            ]
+          }
         }
       }
     }

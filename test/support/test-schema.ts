@@ -45,6 +45,24 @@ export default new Schema({
         someDateTime: { type: 'datetime' },
         someBoolean: { type: 'boolean' }
       }
+    },
+    article: {
+      relationships: {
+        tags: {
+          type: 'hasMany',
+          model: 'tag',
+          inverse: 'articles'
+        }
+      }
+    },
+    tag: {
+      relationships: {
+        articles: {
+          type: 'hasMany',
+          model: 'article',
+          inverse: 'tags'
+        }
+      }
     }
   }
 });

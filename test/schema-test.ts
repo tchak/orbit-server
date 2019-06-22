@@ -41,12 +41,16 @@ module('Orbit Fastify Plugin schema', function(hooks: Hooks) {
         plurals: {
           planet: 'planets',
           moon: 'moons',
-          typedModel: 'typedModels'
+          typedModel: 'typedModels',
+          article: 'articles',
+          tag: 'tags'
         },
         singulars: {
           planets: 'planet',
           moons: 'moon',
-          typedModels: 'typedModel'
+          typedModels: 'typedModel',
+          articles: 'article',
+          tags: 'tag'
         }
       }
     });
