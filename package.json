@@ -28,8 +28,7 @@
     "graphql-iso-date": "^3.6.1",
     "graphql-subscriptions": "^1.1.0",
     "inflected": "^2.0.4",
-    "knex": "^0.17.5",
-    "rxjs": "^6.5.2"
+    "knex": "^0.17.5"
   },
   "scripts": {
     "build": "rm -rf ./dist && tsc",

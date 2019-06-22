@@ -1,11 +1,9 @@
-import { JSONAPISerializer } from '@orbit/jsonapi';
+import { Schema } from '@orbit/data';
 import { dasherize } from '@orbit/utils';
-import { PubSubEngine } from 'graphql-subscriptions';
 
-import Source from '../source';
 import {
   Handler,
-  Config,
+  Context,
   handleAddRecord,
   handleUpdateRecord,
   handleRemoveRecord,
@@ -20,35 +18,32 @@ import {
   handleReplaceRelatedRecord
 } from './handlers';
 
-interface RouteDefinition {
+export { Context };
+
+export interface RouteDefinition {
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   url: string;
-  config: Config;
+  config: { type: string; relationship?: string };
   handler: Handler;
 }
 
-interface RouteConfig {
-  source: Source;
-  serializer: JSONAPISerializer;
-  pubsub?: PubSubEngine;
-}
-
 export function buildJSONAPI(
-  config: RouteConfig
+  schema: Schema
 ): Record<string, RouteDefinition[]> {
   const routes: Record<string, RouteDefinition[]> = {};
 
-  for (let type in config.source.schema.models) {
-    routes[
-      dasherize(config.source.schema.pluralize(type))
-    ] = buildJSONAPIResource(type, config);
+  for (let type in schema.models) {
+    routes[dasherize(schema.pluralize(type))] = buildJSONAPIResource(
+      type,
+      schema
+    );
   }
 
   routes['operations'] = [
     {
       method: 'PATCH',
       url: '/',
-      config: { ...config, type: 'operations' },
+      config: { type: 'operations' },
       handler: handleOperations
     }
   ];
@@ -56,82 +51,79 @@ export function buildJSONAPI(
   return routes;
 }
 
-function buildJSONAPIResource(
-  type: string,
-  config: RouteConfig
-): RouteDefinition[] {
+function buildJSONAPIResource(type: string, schema: Schema): RouteDefinition[] {
   const routes: RouteDefinition[] = [
     {
       method: 'GET',
       url: '/',
-      config: { ...config, type },
+      config: { type },
       handler: handleFindRecords
     },
     {
       method: 'POST',
       url: '/',
-      config: { ...config, type },
+      config: { type },
       handler: handleAddRecord
     },
     {
       method: 'GET',
       url: `/:id`,
-      config: { ...config, type },
+      config: { type },
       handler: handleFindRecord
     },
     {
       method: 'PATCH',
       url: `/:id`,
-      config: { ...config, type },
+      config: { type },
       handler: handleUpdateRecord
     },
     {
       method: 'DELETE',
       url: `/:id`,
-      config: { ...config, type },
+      config: { type },
       handler: handleRemoveRecord
     }
   ];
 
-  config.source.schema.eachRelationship(type, (property, { type: kind }) => {
+  schema.eachRelationship(type, (property, { type: kind }) => {
     const url = `/:id/relationships/${dasherize(property)}`;
 
     if (kind === 'hasMany') {
       routes.push({
         method: 'GET',
         url: `/:id/${property}`,
-        config: { ...config, type, relationship: property },
+        config: { type, relationship: property },
         handler: handleFindRelatedRecords
       });
       routes.push({
         method: 'POST',
         url,
-        config: { ...config, type, relationship: property },
+        config: { type, relationship: property },
         handler: handleAddToRelatedRecords
       });
       routes.push({
         method: 'DELETE',
         url,
-        config: { ...config, type, relationship: property },
+        config: { type, relationship: property },
         handler: handleRemoveFromRelatedRecords
       });
       routes.push({
         method: 'PATCH',
         url,
-        config: { ...config, type, relationship: property },
+        config: { type, relationship: property },
         handler: handleReplaceRelatedRecords
       });
     } else {
       routes.push({
         method: 'GET',
         url: `/:id/${property}`,
-        config: { ...config, type, relationship: property },
+        config: { type, relationship: property },
         handler: handleFindRelatedRecord
       });
       routes.push({
         method: 'PATCH',
         url,
-        config: { ...config, type, relationship: property },
+        config: { type, relationship: property },
         handler: handleReplaceRelatedRecord
       });
     }
