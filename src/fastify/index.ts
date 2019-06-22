@@ -2,14 +2,12 @@ import { FastifyInstance } from 'fastify';
 import plugin from 'fastify-plugin';
 import cors from 'fastify-cors';
 import helmet from 'fastify-helmet';
-// @ts-ignore
-import websocket from 'fastify-websocket';
 
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import { PubSubEngine } from 'graphql-subscriptions';
-import { Transform, Schema, ModelDefinition } from '@orbit/data';
 
 import Source from '../source';
+import fastifySchema from './schema';
 import fastifyJSONAPI from './jsonapi';
 import fastifyGraphQL from './graphql';
 
@@ -23,16 +21,6 @@ export interface ServerSettings {
   inflections?: boolean;
 }
 
-export interface Inflections {
-  plurals: Record<string, string>;
-  singulars: Record<string, string>;
-}
-
-export interface SchemaDocument {
-  models: Record<string, ModelDefinition>;
-  inflections?: Inflections;
-}
-
 export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
   function(fastify: FastifyInstance, settings, next) {
     fastify.register(helmet);
@@ -41,19 +29,10 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
     const { source, pubsub } = settings;
     const context = { source, pubsub };
 
-    if (pubsub) {
-      fastify.register(websocket);
-
-      source.on('transform', (transform: Transform) => {
-        pubsub.publish('transform', transform);
-      });
-    }
-
-    const schemaJson: SchemaDocument = { models: source.schema.models };
-    if (settings.inflections !== false) {
-      schemaJson.inflections = buildInflections(source.schema);
-    }
-    fastify.get('/schema', async () => schemaJson);
+    fastify.register(fastifySchema, {
+      context,
+      inflections: settings.inflections
+    });
 
     if (settings.jsonapi) {
       fastify.register(fastifyJSONAPI, { context });
@@ -68,13 +47,3 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
     next();
   }
 );
-
-function buildInflections(schema: Schema) {
-  const inflections: Inflections = { plurals: {}, singulars: {} };
-  for (let type in schema.models) {
-    let plural = schema.pluralize(type);
-    inflections.plurals[type] = plural;
-    inflections.singulars[plural] = type;
-  }
-  return inflections;
-}

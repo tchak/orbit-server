@@ -15,49 +15,57 @@ export default plugin<
   OutgoingMessage,
   JSONAPIFastifySettings
 >(function(fastify: FastifyInstance, { context }, next) {
-  const server = new JSONAPIServer({ schema: context.source.schema });
+  const server = new JSONAPIFastifyServer({ schema: context.source.schema });
 
-  server.eachRoute((prefix, routes) => {
-    fastify.register(
-      (fastify, _, next) => {
-        for (let route of routes) {
-          fastify.route(toFastifyRouteOptions(route, context));
-        }
-        next();
-      },
-      { prefix }
-    );
-  });
-
-  fastify.setErrorHandler(async (error, _, reply) => {
-    const [status, body] = server.handleError(error);
-    reply.status(status);
-    return body;
-  });
-
+  fastify.register(server.createHandler(context));
   next();
 });
 
-function toFastifyRouteOptions(
-  { url, method, params, handler }: RouteDefinition,
-  context: Context
-): RouteOptions<Server, IncomingMessage, OutgoingMessage> {
-  const { type, relationship } = params;
-  return {
-    url,
-    method,
-    async handler({ params: { id }, query, headers, body }, reply) {
-      const { include } = query;
-
-      const [status, responseHeaders, responseBody] = await handler({
-        headers,
-        params: { type, id, relationship, include },
-        body,
-        context
+class JSONAPIFastifyServer extends JSONAPIServer {
+  createHandler(context: Context) {
+    return plugin((fastify, _, next) => {
+      this.eachRoute((prefix, routes) => {
+        fastify.register(
+          (fastify, _, next) => {
+            for (let route of routes) {
+              fastify.route(this.toRouteOptions(route, context));
+            }
+            next();
+          },
+          { prefix }
+        );
       });
-      reply.status(status);
-      reply.headers(responseHeaders);
-      return responseBody;
-    }
-  };
+
+      fastify.setErrorHandler(async (error, _, reply) => {
+        const [status, body] = this.handleError(error);
+        reply.status(status);
+        return body;
+      });
+
+      next();
+    });
+  }
+
+  private toRouteOptions(
+    { url, method, params, handler }: RouteDefinition,
+    context: Context
+  ): RouteOptions<Server, IncomingMessage, OutgoingMessage> {
+    return {
+      url,
+      method,
+      async handler({ params: { id }, query, headers, body }, reply) {
+        const { include } = query;
+
+        const [status, responseHeaders, responseBody] = await handler({
+          headers,
+          params: { ...params, id, include },
+          body,
+          context
+        });
+        reply.status(status);
+        reply.headers(responseHeaders);
+        return responseBody;
+      }
+    };
+  }
 }
