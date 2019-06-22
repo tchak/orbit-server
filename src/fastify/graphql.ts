@@ -22,6 +22,6 @@ export default plugin<
     context
   });
 
-  fastify.register(apollo.createHandler());
+  fastify.register(apollo.createHandler({ cors: false }));
   next();
 });

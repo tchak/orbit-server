@@ -15,16 +15,27 @@ export { fastifyJSONAPI, fastifyGraphQL };
 
 export interface ServerSettings {
   source: Source;
+  pubsub?: PubSubEngine;
   jsonapi?: boolean;
   graphql?: boolean;
-  pubsub?: PubSubEngine;
   inflections?: boolean;
+  cors?: boolean;
+  helmet?: helmet.FastifyHelmetOptions | boolean;
 }
 
 export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
   function(fastify: FastifyInstance, settings, next) {
-    fastify.register(helmet);
-    fastify.register(cors);
+    if (settings.helmet !== false) {
+      if (settings.helmet === true || !settings.helmet) {
+        fastify.register(helmet);
+      } else {
+        fastify.register(helmet, settings.helmet);
+      }
+    }
+
+    if (settings.cors !== false) {
+      fastify.register(cors);
+    }
 
     const { source, pubsub } = settings;
     const context = { source, pubsub };
