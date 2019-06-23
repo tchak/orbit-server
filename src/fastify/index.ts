@@ -5,11 +5,12 @@ import helmet from 'fastify-helmet';
 
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import { PubSubEngine } from 'graphql-subscriptions';
+import { Config } from 'apollo-server-fastify';
 
 import Source from '../source';
 import fastifySchema from './schema';
 import fastifyJSONAPI from './jsonapi';
-import fastifyGraphQL from './graphql';
+import fastifyGraphQL, { GraphQLFastifySettings } from './graphql';
 
 export { fastifyJSONAPI, fastifyGraphQL };
 
@@ -17,7 +18,7 @@ export interface ServerSettings {
   source: Source;
   pubsub?: PubSubEngine;
   jsonapi?: boolean;
-  graphql?: boolean;
+  graphql?: boolean | Config;
   inflections?: boolean;
   cors?: boolean;
   helmet?: helmet.FastifyHelmetOptions | boolean;
@@ -50,7 +51,12 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
     }
 
     if (settings.graphql) {
-      fastify.register(fastifyGraphQL, { context });
+      let options: GraphQLFastifySettings = { context };
+
+      if (typeof settings.graphql === 'object') {
+        options.config = settings.graphql;
+      }
+      fastify.register(fastifyGraphQL, options);
     }
 
     fastify.addHook('onClose', (_, done) => source.disconnect().then(done));
