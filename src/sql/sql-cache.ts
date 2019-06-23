@@ -149,14 +149,28 @@ export default class SQLCache extends AsyncRecordCache {
             if (kind === 'hasOne') {
               table.uuid(columnName);
             } else {
+              if (!inverse || !type) {
+                throw new Error(
+                  `SQLSource: "type" and "inverse" are required on a relationship`
+                );
+              }
+
+              if (Array.isArray(type)) {
+                throw new Error(
+                  `SQLSource: polymorphic types are not supported yet`
+                );
+              }
+
               let { type: inverseKind } = this.schema.getRelationship(
-                type as string,
-                inverse as string
+                type,
+                inverse
               );
+
               if (inverseKind === 'hasMany') {
-                joinTables[
-                  tableizeJoinTableName(property, inverse as string)
-                ] = [columnName, foreignKey(inverse as string)];
+                joinTables[tableizeJoinTableName(property, inverse)] = [
+                  columnName,
+                  foreignKey(inverse)
+                ];
               }
             }
           }
@@ -288,11 +302,19 @@ export default class SQLCache extends AsyncRecordCache {
   ): Promise<RecordIdentity> {
     return new Promise(async resolve => {
       if (this.schema.hasRelationship(identity.type, relationship)) {
-        const relationshipDef = this.schema.getRelationship(
+        const { model: type } = this.schema.getRelationship(
           identity.type,
           relationship
         );
-        const type = relationshipDef.model as string;
+
+        if (!type) {
+          throw new Error(`SQLSource: "type" is required on a relationship`);
+        }
+
+        if (Array.isArray(type)) {
+          throw new Error(`SQLSource: polymorphic types are not supported yet`);
+        }
+
         const fields = this.fieldsForType(type);
         const record = await this.scopeForType(type)
           .join(
@@ -316,8 +338,19 @@ export default class SQLCache extends AsyncRecordCache {
         identity.type,
         relationship
       );
-      const type = relationshipDef.model as string;
-      const inverse = relationshipDef.inverse as string;
+      const type = relationshipDef.model;
+      const inverse = relationshipDef.inverse;
+
+      if (!inverse || !type) {
+        throw new Error(
+          `SQLSource: "type" and "inverse" are required on a relationship`
+        );
+      }
+
+      if (Array.isArray(type)) {
+        throw new Error(`SQLSource: polymorphic types are not supported yet`);
+      }
+
       const { type: inverseKind } = this.schema.getRelationship(type, inverse);
 
       if (inverseKind === 'hasOne') {
@@ -385,43 +418,55 @@ export default class SQLCache extends AsyncRecordCache {
       [string, string, RecordIdentity[]]
     > = {};
 
-    this.schema.eachAttribute(record.type, property => {
-      if (record.attributes && record.attributes[property] !== undefined) {
-        properties[underscore(property)] = record.attributes[property];
-      }
-    });
-
-    this.schema.eachRelationship(
-      record.type,
-      (property, { type: kind, model: type, inverse }) => {
-        const { type: inverseKind } = this.schema.getRelationship(
-          type as string,
-          inverse as string
-        );
-
-        if (
-          kind === 'hasOne' &&
-          record.relationships &&
-          record.relationships[property]
-        ) {
-          const data = record.relationships[property]
-            .data as RecordIdentity | null;
-          properties[foreignKey(property)] = data ? data.id : null;
-        } else if (
-          kind === 'hasMany' &&
-          inverseKind === 'hasMany' &&
-          record.relationships &&
-          record.relationships[property]
-        ) {
-          const data = record.relationships[property].data as RecordIdentity[];
-          relationships[tableizeJoinTableName(property, inverse as string)] = [
-            foreignKey(property),
-            foreignKey(inverse as string),
-            data
-          ];
+    if (record.attributes) {
+      this.schema.eachAttribute(record.type, property => {
+        if (record.attributes && record.attributes[property] !== undefined) {
+          properties[underscore(property)] = record.attributes[property];
         }
-      }
-    );
+      });
+    }
+
+    if (record.relationships) {
+      this.schema.eachRelationship(
+        record.type,
+        (property, { type: kind, model: type, inverse }) => {
+          if (record.relationships && record.relationships[property]) {
+            if (kind === 'hasOne') {
+              const data = record.relationships[property]
+                .data as RecordIdentity | null;
+              properties[foreignKey(property)] = data ? data.id : null;
+            } else {
+              if (!inverse || !type) {
+                throw new Error(
+                  `SQLSource: "type" and "inverse" are required on a relationship`
+                );
+              }
+
+              if (Array.isArray(type)) {
+                throw new Error(
+                  `SQLSource: polymorphic types are not supported yet`
+                );
+              }
+
+              const { type: inverseKind } = this.schema.getRelationship(
+                type,
+                inverse
+              );
+
+              if (inverseKind === 'hasMany') {
+                const data = record.relationships[property]
+                  .data as RecordIdentity[];
+                relationships[tableizeJoinTableName(property, inverse)] = [
+                  foreignKey(property),
+                  foreignKey(inverse),
+                  data
+                ];
+              }
+            }
+          }
+        }
+      );
+    }
 
     return [properties, relationships];
   }
