@@ -57,13 +57,13 @@
     "ts-node": "^8.3.0",
     "typescript": "^3.5.2"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "release-it": {
     "github": {
       "release": false
-    },
-    "npm": {
-      "publish": false,
-      "access": "public"
     }
   }
 }
