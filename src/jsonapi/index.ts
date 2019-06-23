@@ -5,14 +5,16 @@ import {
   RecordException,
   RecordIdentity,
   Record as OrbitRecord,
-  Schema
+  Schema,
+  SortQBParam,
+  FilterQBParam,
+  QueryBuilder
 } from '@orbit/data';
 import {
   ResourceDocument,
   JSONAPISerializer,
   ResourceOperationsDocument
 } from '@orbit/jsonapi';
-import { dasherize } from '@orbit/utils';
 
 import Context from '../context';
 
@@ -36,6 +38,8 @@ export interface DefaultParams {
   id?: string;
   relationship?: string;
   include?: string | string[];
+  filter?: Record<string, string>;
+  sort?: string;
 }
 
 export interface ResourceParams extends DefaultParams {
@@ -109,10 +113,7 @@ export class JSONAPIServer {
 
   eachRoute(callback: (prefix: string, route: RouteDefinition[]) => void) {
     for (let type in this.schema.models) {
-      callback(
-        dasherize(this.schema.pluralize(type)),
-        this.resourceRoutes(type)
-      );
+      callback(this.serializer.resourceType(type), this.resourceRoutes(type));
     }
 
     callback('operations', [
@@ -180,7 +181,10 @@ export class JSONAPIServer {
     ];
 
     this.schema.eachRelationship(type, (property, { type: kind }) => {
-      const url = `/:id/relationships/${dasherize(property)}`;
+      const url = `/:id/relationships/${this.serializer.resourceRelationship(
+        type,
+        property
+      )}`;
 
       if (kind === 'hasMany') {
         routes.push({
@@ -286,13 +290,13 @@ export class JSONAPIServer {
   }
 
   protected async handleFindRecords({
-    params: { type, include },
+    params: { type, include, filter, sort },
     context
   }: JSONAPIRequest): Promise<JSONAPIResponse> {
     const { source } = context;
 
     const records: OrbitRecord[] = await source.query(
-      q => q.findRecords(type),
+      q => this.buildFindRecordsQuery(q, type, filter, sort),
       {
         [source.name]: { include: normalizeInclude(include) }
       }
@@ -433,6 +437,57 @@ export class JSONAPIServer {
         operations: result.map(data => this.serializer.serialize({ data }))
       }
     ];
+  }
+
+  protected buildFindRecordsQuery(
+    q: QueryBuilder,
+    type: string,
+    filter?: Record<string, string>,
+    sort?: string
+  ) {
+    let term = q.findRecords(type);
+    if (filter) {
+      term = term.filter(...this.filterQBParams(type, filter));
+    }
+    if (sort) {
+      term = term.sort(...this.sortQBParams(type, sort));
+    }
+    return term;
+  }
+
+  protected filterQBParams(
+    type: string,
+    filter: Record<string, string>
+  ): FilterQBParam[] {
+    const params: FilterQBParam[] = [];
+    for (let property in filter) {
+      let attribute = this.serializer.recordAttribute(type, property);
+      if (this.schema.hasAttribute(type, attribute)) {
+        params.push({
+          attribute,
+          value: filter[property]
+        });
+      }
+    }
+    return params;
+  }
+
+  protected sortQBParams(type: string, sort: string): SortQBParam[] {
+    const params: SortQBParam[] = [];
+    for (let property of sort.split(',')) {
+      let desc = property.startsWith('-');
+      let attribute = this.serializer.recordAttribute(
+        type,
+        desc ? property.substring(1) : property
+      );
+      if (this.schema.hasAttribute(type, attribute)) {
+        params.push({
+          attribute,
+          order: desc ? 'descending' : 'ascending'
+        });
+      }
+    }
+    return params;
   }
 }
 

@@ -27,7 +27,8 @@
     "graphql-iso-date": "^3.6.1",
     "graphql-subscriptions": "^1.1.0",
     "inflected": "^2.0.4",
-    "knex": "^0.17.6"
+    "knex": "^0.17.6",
+    "qs": "^6.7.0"
   },
   "scripts": {
     "build": "rm -rf ./dist && tsc",
@@ -41,6 +42,7 @@
     "@types/graphql-iso-date": "^3.3.1",
     "@types/inflected": "^1.1.29",
     "@types/node": "^12.0.10",
+    "@types/qs": "^6.5.3",
     "@types/qunit": "^2.9.0",
     "@typescript-eslint/eslint-plugin": "^1.10.2",
     "@typescript-eslint/parser": "^1.10.2",

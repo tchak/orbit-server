@@ -2,6 +2,7 @@
 import { module, test } from 'qunit';
 import { FastifyInstance, HTTPInjectOptions } from 'fastify';
 import { uuid } from '@orbit/utils';
+import qs from 'qs';
 
 export interface Subject {
   fastify: FastifyInstance;
@@ -150,6 +151,59 @@ export default function(subject: Subject) {
 
       const response = await createArticle(subject.fastify, id);
       assert.equal(response.status, 201);
+    });
+
+    test('filter', async function(assert: Assert) {
+      await createTags(subject.fastify);
+
+      const response = await request(subject.fastify, {
+        url: `/tags`,
+        query: {
+          filter: qs.stringify({
+            name: 'b'
+          })
+        }
+      });
+
+      assert.equal(response.status, 200);
+      assert.equal(response.body.data.length, 1);
+      assert.deepEqual(response.body.data[0].attributes, {
+        name: 'b'
+      });
+    });
+
+    test('sort (asc)', async function(assert: Assert) {
+      await createTags(subject.fastify);
+
+      const response = await request(subject.fastify, {
+        url: `/tags`,
+        query: {
+          sort: 'name'
+        }
+      });
+
+      assert.equal(response.status, 200);
+      assert.equal(response.body.data.length, 3);
+      assert.deepEqual(response.body.data[0].attributes.name, 'a');
+      assert.deepEqual(response.body.data[1].attributes.name, 'b');
+      assert.deepEqual(response.body.data[2].attributes.name, 'c');
+    });
+
+    test('sort (desc)', async function(assert: Assert) {
+      await createTags(subject.fastify);
+
+      const response = await request(subject.fastify, {
+        url: `/tags`,
+        query: {
+          sort: '-name'
+        }
+      });
+
+      assert.equal(response.status, 200);
+      assert.equal(response.body.data.length, 3);
+      assert.deepEqual(response.body.data[0].attributes.name, 'c');
+      assert.deepEqual(response.body.data[1].attributes.name, 'b');
+      assert.deepEqual(response.body.data[2].attributes.name, 'a');
     });
 
     test('operations', async function(assert: Assert) {
@@ -543,6 +597,53 @@ function createTag(fastify: FastifyInstance) {
       data: {
         type: 'tags'
       }
+    }
+  });
+}
+
+function createTags(fastify: FastifyInstance) {
+  return request(fastify, {
+    method: 'PATCH',
+    url: '/operations',
+    payload: {
+      operations: [
+        {
+          op: 'add',
+          ref: {
+            type: 'tags'
+          },
+          data: {
+            type: 'tags',
+            attributes: {
+              name: 'a'
+            }
+          }
+        },
+        {
+          op: 'add',
+          ref: {
+            type: 'tags'
+          },
+          data: {
+            type: 'tags',
+            attributes: {
+              name: 'c'
+            }
+          }
+        },
+        {
+          op: 'add',
+          ref: {
+            type: 'tags'
+          },
+          data: {
+            type: 'tags',
+            attributes: {
+              name: 'b'
+            }
+          }
+        }
+      ]
     }
   });
 }

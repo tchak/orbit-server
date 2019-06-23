@@ -1,6 +1,7 @@
 import { FastifyInstance, RouteOptions } from 'fastify';
 import plugin from 'fastify-plugin';
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
+import qs from 'qs';
 
 import Context from '../context';
 import { JSONAPIServer, RouteDefinition } from '../jsonapi';
@@ -54,11 +55,16 @@ class JSONAPIFastifyServer extends JSONAPIServer {
       url,
       method,
       async handler({ params: { id }, query, headers, body }, reply) {
-        const { include } = query;
-
+        const { include, filter, sort } = query;
         const [status, responseHeaders, responseBody] = await handler({
           headers,
-          params: { ...params, id, include },
+          params: {
+            ...params,
+            id,
+            include: qs.parse(include),
+            filter: qs.parse(filter),
+            sort
+          },
           body,
           context
         });

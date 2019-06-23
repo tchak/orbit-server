@@ -56,6 +56,9 @@ export default new Schema({
       }
     },
     tag: {
+      attributes: {
+        name: { type: 'string' }
+      },
       relationships: {
         articles: {
           type: 'hasMany',
