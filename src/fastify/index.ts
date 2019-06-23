@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import plugin from 'fastify-plugin';
 import cors from 'fastify-cors';
 import helmet from 'fastify-helmet';
+import favicon from 'fastify-favicon';
 
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import { PubSubEngine } from 'graphql-subscriptions';
@@ -26,6 +27,8 @@ export interface ServerSettings {
 
 export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
   function(fastify: FastifyInstance, settings, next) {
+    fastify.register(favicon);
+
     if (settings.helmet !== false) {
       if (settings.helmet === true || !settings.helmet) {
         fastify.register(helmet);
