@@ -37,7 +37,7 @@ export interface DefaultParams {
   type: string;
   id?: string;
   relationship?: string;
-  include?: string | string[];
+  include?: string;
   filter?: Record<string, string>;
   sort?: string;
 }
@@ -237,9 +237,10 @@ export class JSONAPIServer {
   }: JSONAPIRequest<ResourceParams>): Promise<JSONAPIResponse<null>> {
     const { source } = context;
     const { data } = this.serializer.deserialize(body);
-    const options = transformOptions(headers);
 
-    await source.update(q => q.updateRecord(data as OrbitRecord), options);
+    await source.update(q => q.updateRecord(data as OrbitRecord), {
+      [source.name]: this.sourceOptions(headers)
+    });
     return [HTTPStatus.NoContent, {}, null];
   }
 
@@ -249,14 +250,16 @@ export class JSONAPIServer {
     context
   }: JSONAPIRequest<ResourceParams>): Promise<JSONAPIResponse<null>> {
     const { source } = context;
-    const options = transformOptions(headers);
 
-    await source.update(q => q.removeRecord({ id, type }), options);
+    await source.update(q => q.removeRecord({ id, type }), {
+      [source.name]: this.sourceOptions(headers)
+    });
     return [HTTPStatus.NoContent, {}, null];
   }
 
   protected async handleFindRecord({
     params: { type, id, include },
+    headers,
     context
   }: JSONAPIRequest<ResourceParams>): Promise<JSONAPIResponse> {
     const { source } = context;
@@ -264,7 +267,7 @@ export class JSONAPIServer {
     const record: OrbitRecord = await source.query(
       q => q.findRecord({ type, id }),
       {
-        [source.name]: { include: normalizeInclude(include) }
+        [source.name]: this.sourceOptions(headers, include)
       }
     );
     return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: record })];
@@ -272,15 +275,17 @@ export class JSONAPIServer {
 
   protected async handleAddRecord({
     body,
+    params: { include },
     headers,
     context
   }: JSONAPIRequest): Promise<JSONAPIResponse> {
     const { source } = context;
     const { data } = this.serializer.deserialize(body);
-    const options = transformOptions(headers);
     const record: OrbitRecord = await source.update(
       q => q.addRecord(data as OrbitRecord),
-      options
+      {
+        [source.name]: this.sourceOptions(headers, include)
+      }
     );
     return [
       HTTPStatus.Created,
@@ -291,6 +296,7 @@ export class JSONAPIServer {
 
   protected async handleFindRecords({
     params: { type, include, filter, sort },
+    headers,
     context
   }: JSONAPIRequest): Promise<JSONAPIResponse> {
     const { source } = context;
@@ -298,7 +304,7 @@ export class JSONAPIServer {
     const records: OrbitRecord[] = await source.query(
       q => this.buildFindRecordsQuery(q, type, filter, sort),
       {
-        [source.name]: { include: normalizeInclude(include) }
+        [source.name]: this.sourceOptions(headers, include)
       }
     );
     return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: records })];
@@ -306,6 +312,7 @@ export class JSONAPIServer {
 
   protected async handleFindRelatedRecords({
     params: { type, id, relationship, include },
+    headers,
     context
   }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse> {
     const { source } = context;
@@ -313,7 +320,7 @@ export class JSONAPIServer {
     const records: OrbitRecord[] = await source.query(
       q => q.findRelatedRecords({ type, id }, relationship),
       {
-        [source.name]: { include: normalizeInclude(include) }
+        [source.name]: this.sourceOptions(headers, include)
       }
     );
     return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: records })];
@@ -321,6 +328,7 @@ export class JSONAPIServer {
 
   protected async handleFindRelatedRecord({
     params: { type, id, relationship, include },
+    headers,
     context
   }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse> {
     const { source } = context;
@@ -328,7 +336,7 @@ export class JSONAPIServer {
     const record: OrbitRecord = await source.query(
       q => q.findRelatedRecord({ type, id }, relationship),
       {
-        [source.name]: { include: normalizeInclude(include) }
+        [source.name]: this.sourceOptions(headers, include)
       }
     );
     return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: record })];
@@ -342,12 +350,13 @@ export class JSONAPIServer {
   }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
     const { source } = context;
     const { data } = this.serializer.deserialize(body);
-    const options = transformOptions(headers);
 
     for (let identity of data as RecordIdentity[]) {
       await source.update(
         q => q.addToRelatedRecords({ id, type }, relationship, identity),
-        options
+        {
+          [source.name]: this.sourceOptions(headers)
+        }
       );
     }
     return [HTTPStatus.NoContent, {}, null];
@@ -361,12 +370,13 @@ export class JSONAPIServer {
   }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
     const { source } = context;
     const { data } = this.serializer.deserialize(body);
-    const options = transformOptions(headers);
 
     for (let identity of data as RecordIdentity[]) {
       await source.update(
         q => q.removeFromRelatedRecords({ id, type }, relationship, identity),
-        options
+        {
+          [source.name]: this.sourceOptions(headers)
+        }
       );
     }
     return [HTTPStatus.NoContent, {}, null];
@@ -380,7 +390,6 @@ export class JSONAPIServer {
   }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
     const { source } = context;
     const { data } = this.serializer.deserialize(body);
-    const options = transformOptions(headers);
 
     await source.update(
       q =>
@@ -389,7 +398,9 @@ export class JSONAPIServer {
           relationship as string,
           data as RecordIdentity[]
         ),
-      options
+      {
+        [source.name]: this.sourceOptions(headers)
+      }
     );
     return [HTTPStatus.NoContent, {}, null];
   }
@@ -402,7 +413,6 @@ export class JSONAPIServer {
   }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
     const { source } = context;
     const { data } = this.serializer.deserialize(body);
-    const options = transformOptions(headers);
 
     await source.update(
       q =>
@@ -411,13 +421,16 @@ export class JSONAPIServer {
           relationship as string,
           data as RecordIdentity
         ),
-      options
+      {
+        [source.name]: this.sourceOptions(headers)
+      }
     );
     return [HTTPStatus.NoContent, {}, null];
   }
 
   protected async handleOperations({
     body,
+    headers,
     context
   }: JSONAPIOperationsRequest): Promise<
     JSONAPIResponse<ResourceOperationsResponseDocument>
@@ -429,7 +442,11 @@ export class JSONAPIServer {
         source.schema.initializeRecord(operation.record);
       }
     }
-    const result: OrbitRecord[] = toArray(await source.update(operations));
+    const result: OrbitRecord[] = toArray(
+      await source.update(operations, {
+        [source.name]: this.sourceOptions(headers)
+      })
+    );
     return [
       HTTPStatus.Ok,
       {},
@@ -437,6 +454,15 @@ export class JSONAPIServer {
         operations: result.map(data => this.serializer.serialize({ data }))
       }
     ];
+  }
+
+  protected sourceOptions(headers: Headers, include?: string) {
+    return {
+      include,
+      settings: {
+        headers
+      }
+    };
   }
 
   protected buildFindRecordsQuery(
@@ -489,15 +515,4 @@ export class JSONAPIServer {
     }
     return params;
   }
-}
-
-function normalizeInclude(include?: string | string[]): string[] {
-  return include ? (Array.isArray(include) ? include : [include]) : [];
-}
-
-function transformOptions(headers: Record<string, string>) {
-  if (headers['x-client-id']) {
-    return { clientId: headers['x-client-id'] };
-  }
-  return {};
 }
