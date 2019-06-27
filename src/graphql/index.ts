@@ -56,9 +56,12 @@ export function makeExecutableSchema(schema: Schema): GraphQLSchema {
             type: new GraphQLNonNull(GraphQLID)
           }
         },
-        resolve(_, params: FindRecordParams, { source }) {
-          return source.query(q =>
-            q.findRecord({ type, id: params.id as string })
+        resolve(_, params: FindRecordParams, { source, headers }) {
+          return source.query(
+            q => q.findRecord({ type, id: params.id as string }),
+            {
+              [source.name]: { headers: headers }
+            }
           );
         }
       };
@@ -70,10 +73,16 @@ export function makeExecutableSchema(schema: Schema): GraphQLSchema {
             type: new GraphQLList(GraphQLID)
           }
         },
-        resolve(_, params: FindRecordsParams, { source }) {
+        resolve(_, params: FindRecordsParams, { source, headers }) {
           if (params.ids) {
-            return source.query(q =>
-              q.findRecords((params.ids as string[]).map(id => ({ type, id })))
+            return source.query(
+              q =>
+                q.findRecords(
+                  (params.ids as string[]).map(id => ({ type, id }))
+                ),
+              {
+                [source.name]: { headers }
+              }
             );
           }
           return source.query(q => q.findRecords(type));
@@ -127,15 +136,16 @@ function makeModelType(
         fields[property] = {
           type: new GraphQLNonNull(new GraphQLList(types[type])),
           resolve: (parent, _, context) => {
+            const { source, headers } = context;
             return getDataLoader(
               context,
               namespace,
               (records: OrbitRecord[]) => {
                 return Promise.all(
                   records.map(record =>
-                    context.source.query(q =>
-                      q.findRelatedRecords(record, property)
-                    )
+                    source.query(q => q.findRelatedRecords(record, property), {
+                      [source.name]: { headers }
+                    })
                   )
                 );
               }
@@ -146,15 +156,16 @@ function makeModelType(
         fields[property] = {
           type: types[type],
           resolve: (parent, _, context) => {
+            const { source, headers } = context;
             return getDataLoader(
               context,
               namespace,
               (records: OrbitRecord[]) => {
                 return Promise.all(
                   records.map(record =>
-                    context.source.query(q =>
-                      q.findRelatedRecord(record, property)
-                    )
+                    source.query(q => q.findRelatedRecord(record, property), {
+                      [source.name]: { headers }
+                    })
                   )
                 );
               }

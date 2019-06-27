@@ -18,7 +18,13 @@ export default plugin<
   GraphQLFastifySettings
 >(function(fastify: FastifyInstance, { context, config }, next) {
   const schema = makeExecutableSchema(context.source.schema);
-  const server = new ApolloServer({ schema, context, ...config });
+  const server = new ApolloServer({
+    schema,
+    context({ req }) {
+      return { ...context, headers: req.headers };
+    },
+    ...config
+  });
 
   fastify.register(server.createHandler({ cors: false }));
   next();
