@@ -281,6 +281,7 @@ export class JSONAPIServer {
   }: JSONAPIRequest): Promise<JSONAPIResponse> {
     const { source } = context;
     const { data } = this.serializer.deserialize(body);
+
     const record: OrbitRecord = await source.update(
       q => q.addRecord(data as OrbitRecord),
       {
@@ -437,12 +438,14 @@ export class JSONAPIServer {
   > {
     const { source } = context;
     const operations = this.serializer.deserializeOperationsDocument(body);
+
     for (let operation of operations) {
       if (operation.op === 'addRecord') {
         source.schema.initializeRecord(operation.record);
       }
     }
-    const result: OrbitRecord[] = toArray(
+
+    const records: OrbitRecord[] = toArray(
       await source.update(operations, {
         [source.name]: this.sourceOptions(headers)
       })
@@ -451,7 +454,7 @@ export class JSONAPIServer {
       HTTPStatus.Ok,
       {},
       {
-        operations: result.map(data => this.serializer.serialize({ data }))
+        operations: records.map(data => this.serializer.serialize({ data }))
       }
     ];
   }
