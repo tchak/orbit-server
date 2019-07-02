@@ -8,7 +8,9 @@ import {
   Schema,
   SortQBParam,
   FilterQBParam,
-  QueryBuilder
+  QueryBuilder,
+  ClientError,
+  ServerError
 } from '@orbit/data';
 import {
   ResourceDocument,
@@ -135,6 +137,9 @@ export class JSONAPIServer {
     if (error instanceof RecordNotFoundException) {
       detail = error.description;
       code = HTTPStatus.NotFound;
+    } else if (error instanceof ClientError || error instanceof ServerError) {
+      detail = error.description;
+      code = (error as any).response.status;
     } else if (
       error instanceof SchemaError ||
       error instanceof RecordException
