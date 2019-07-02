@@ -377,7 +377,7 @@ export default function(subject: Subject) {
       });
     });
 
-    test('create typedModels', async function(assert: Assert) {
+    test('get typedModels', async function(assert: Assert) {
       const { body } = await createTypedModel(subject.fastify);
       const id = body.data.id;
 
@@ -394,6 +394,81 @@ export default function(subject: Subject) {
         someText: 'Some text',
         someNumber: 2,
         someBoolean: true
+      });
+    });
+
+    test('filter', async function(assert: Assert) {
+      await createTags(subject.fastify);
+
+      const response = await request(subject.fastify, {
+        method: 'POST',
+        url: `/graphql`,
+        payload: {
+          query: `{ tags(where: { name: "b" }) { name } }`
+        }
+      });
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(response.body.data, {
+        tags: [
+          {
+            name: 'b'
+          }
+        ]
+      });
+    });
+
+    test('sort (asc)', async function(assert: Assert) {
+      await createTags(subject.fastify);
+
+      const response = await request(subject.fastify, {
+        method: 'POST',
+        url: `/graphql`,
+        payload: {
+          query: `{ tags(orderBy: name_ASC) { name } }`
+        }
+      });
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(response.body.data, {
+        tags: [
+          {
+            name: 'a'
+          },
+          {
+            name: 'b'
+          },
+          {
+            name: 'c'
+          }
+        ]
+      });
+    });
+
+    test('sort (desc)', async function(assert: Assert) {
+      await createTags(subject.fastify);
+
+      const response = await request(subject.fastify, {
+        method: 'POST',
+        url: `/graphql`,
+        payload: {
+          query: `{ tags(orderBy: name_DESC) { name } }`
+        }
+      });
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(response.body.data, {
+        tags: [
+          {
+            name: 'c'
+          },
+          {
+            name: 'b'
+          },
+          {
+            name: 'a'
+          }
+        ]
       });
     });
   });

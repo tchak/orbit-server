@@ -3,7 +3,10 @@ import {
   RecordIdentity,
   Record as OrbitRecord,
   serializeRecordIdentity,
-  AttributeDefinition
+  AttributeDefinition,
+  FilterQBParam,
+  SortQBParam,
+  QueryBuilder
 } from '@orbit/data';
 import { GraphQLSchema } from 'graphql/type/schema';
 import {
@@ -11,7 +14,11 @@ import {
   GraphQLFieldConfig,
   GraphQLList,
   GraphQLNonNull,
-  GraphQLScalarType
+  GraphQLScalarType,
+  GraphQLEnumType,
+  GraphQLEnumValueConfigMap,
+  GraphQLInputObjectType,
+  GraphQLInputFieldConfigMap
 } from 'graphql/type/definition';
 import {
   GraphQLString,
@@ -33,13 +40,16 @@ interface FindRecordParams extends Params {
 
 interface FindRecordsParams extends Params {
   ids?: string[];
-  order?: string;
+  where: Record<string, any>;
+  orderBy?: SortQBParam;
 }
 
 type QueryResult = OrbitRecord | OrbitRecord[] | null;
 
 export function makeExecutableSchema(schema: Schema): GraphQLSchema {
   const types: Record<string, GraphQLObjectType> = {};
+  const enums: Record<string, GraphQLEnumType> = {};
+  const inputs: Record<string, GraphQLInputObjectType> = {};
   const fields = () => {
     const fields: Record<
       string,
@@ -47,7 +57,7 @@ export function makeExecutableSchema(schema: Schema): GraphQLSchema {
     > = {};
 
     for (let type in schema.models) {
-      makeModelType(schema, type, types);
+      makeModelType(schema, type, types, enums, inputs);
 
       fields[type] = {
         type: types[type],
@@ -69,23 +79,27 @@ export function makeExecutableSchema(schema: Schema): GraphQLSchema {
       fields[schema.pluralize(type)] = {
         type: new GraphQLNonNull(new GraphQLList(types[type])),
         args: {
-          ids: {
-            type: new GraphQLList(GraphQLID)
+          orderBy: {
+            type: makeOrderByInputType(schema, type, enums)
+          },
+          where: {
+            type: makeWhereInputType(schema, type, inputs)
           }
         },
         resolve(_, params: FindRecordsParams, { source, headers }) {
-          if (params.ids) {
-            return source.query(
-              q =>
-                q.findRecords(
-                  (params.ids as string[]).map(id => ({ type, id }))
-                ),
-              {
-                [source.name]: { headers }
-              }
-            );
-          }
-          return source.query(q => q.findRecords(type));
+          return source.query(
+            q =>
+              buildFindRecordsQuery(
+                schema,
+                type,
+                q,
+                params.where,
+                params.orderBy
+              ),
+            {
+              [source.name]: { headers }
+            }
+          );
         }
       };
     }
@@ -104,7 +118,9 @@ export function makeExecutableSchema(schema: Schema): GraphQLSchema {
 function makeModelType(
   schema: Schema,
   type: string,
-  types: Record<string, GraphQLObjectType>
+  types: Record<string, GraphQLObjectType>,
+  enums: Record<string, GraphQLEnumType>,
+  inputs: Record<string, GraphQLInputObjectType>
 ): GraphQLObjectType<RecordIdentity, Context> {
   const typeClassName = classify(type);
   const fields = () => {
@@ -135,6 +151,14 @@ function makeModelType(
       if (kind === 'hasMany') {
         fields[property] = {
           type: new GraphQLNonNull(new GraphQLList(types[type])),
+          args: {
+            orderBy: {
+              type: makeOrderByInputType(schema, type, enums)
+            },
+            where: {
+              type: makeWhereInputType(schema, type, inputs)
+            }
+          },
           resolve: (parent, _, context) => {
             const { source, headers } = context;
             return getDataLoader(
@@ -188,6 +212,79 @@ function makeModelType(
   return ModelType;
 }
 
+function makeOrderByInputType(
+  schema: Schema,
+  type: string,
+  enums: Record<string, GraphQLEnumType>
+) {
+  const typeClassName = `${classify(type)}OrderByInput`;
+  let OrderByInput = enums[typeClassName];
+
+  if (!OrderByInput) {
+    const orderByInputFields: GraphQLEnumValueConfigMap = {
+      ['id_ASC']: { value: { attribute: 'id', order: 'ascending' } },
+      ['id_DESC']: { value: { attribute: 'id', order: 'descending' } }
+    };
+    schema.eachAttribute(type, property => {
+      orderByInputFields[`${property}_ASC`] = {
+        value: { attribute: property, order: 'ascending' }
+      };
+      orderByInputFields[`${property}_DESC`] = {
+        value: { attribute: property, order: 'descending' }
+      };
+    });
+
+    OrderByInput = new GraphQLEnumType({
+      name: typeClassName,
+      values: orderByInputFields
+    });
+
+    enums[typeClassName] = OrderByInput;
+  }
+
+  return OrderByInput;
+}
+
+function makeWhereInputType(
+  schema: Schema,
+  type: string,
+  inputs: Record<string, GraphQLInputObjectType>
+) {
+  const typeClassName = `${classify(type)}WhereInput`;
+  let WhereInput = inputs[typeClassName];
+
+  if (!WhereInput) {
+    const whereInputFields: GraphQLInputFieldConfigMap = {
+      id: { type: GraphQLID },
+      ['id_in']: { type: new GraphQLList(GraphQLID) }
+    };
+    schema.eachAttribute(type, (property, attribute) => {
+      const GraphQLType = getAttributeGraphQLType(attribute);
+      whereInputFields[property] = {
+        type: GraphQLType
+      };
+      whereInputFields[`${property}_not`] = {
+        type: GraphQLType
+      };
+      whereInputFields[`${property}_in`] = {
+        type: new GraphQLList(GraphQLType)
+      };
+      whereInputFields[`${property}_not_in`] = {
+        type: new GraphQLList(GraphQLType)
+      };
+    });
+
+    WhereInput = new GraphQLInputObjectType({
+      name: typeClassName,
+      fields: whereInputFields
+    });
+
+    inputs[typeClassName] = WhereInput;
+  }
+
+  return WhereInput;
+}
+
 function classify(str: string): string {
   return capitalize(camelize(str));
 }
@@ -237,3 +334,46 @@ function dataLoaderMapFor(context: object) {
 }
 
 const dataLoaderMapForContext = new WeakMap();
+
+function buildFindRecordsQuery(
+  schema: Schema,
+  type: string,
+  q: QueryBuilder,
+  where?: Record<string, any>,
+  orderBy?: SortQBParam
+) {
+  let term;
+  const { id_in: idIn = undefined, id = undefined, ...whereOnAttributes } =
+    where || {};
+  if (idIn) {
+    term = q.findRecords((idIn as string[]).map(id => ({ type, id })));
+  } else if (id) {
+    term = q.findRecords([{ type, id }]);
+  } else {
+    term = q.findRecords(type);
+  }
+  if (where && Object.keys(whereOnAttributes).length) {
+    term = term.filter(...filterQBParams(schema, type, whereOnAttributes));
+  }
+  if (orderBy) {
+    term = term.sort(orderBy);
+  }
+  return term;
+}
+
+function filterQBParams(
+  schema: Schema,
+  type: string,
+  where: Record<string, any>
+): FilterQBParam[] {
+  const params: FilterQBParam[] = [];
+  for (let attribute in where) {
+    if (schema.hasAttribute(type, attribute)) {
+      params.push({
+        attribute,
+        value: where[attribute]
+      });
+    }
+  }
+  return params;
+}
