@@ -36,6 +36,7 @@ interface ErrorsDocument {
 }
 
 export interface DefaultParams {
+  url: string;
   type: string;
   id?: string;
   relationship?: string;
@@ -280,7 +281,7 @@ export class JSONAPIServer {
 
   protected async handleAddRecord({
     body,
-    params: { include },
+    params: { url, include },
     headers,
     context
   }: JSONAPIRequest): Promise<JSONAPIResponse> {
@@ -295,7 +296,9 @@ export class JSONAPIServer {
     );
     return [
       HTTPStatus.Created,
-      {},
+      {
+        location: `${url}/${record.id}`
+      },
       this.serializer.serialize({ data: record })
     ];
   }

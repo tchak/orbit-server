@@ -21,6 +21,10 @@ export default function(subject: Subject) {
       const response = await createEarth(subject.fastify);
 
       assert.equal(response.status, 201);
+      assert.equal(
+        response.headers.location,
+        `/planets/${response.body.data.id}`
+      );
       assert.equal(response.body.data.type, 'planets');
       assert.ok(response.body.data.id);
       assert.deepEqual(
@@ -479,7 +483,7 @@ async function request(fastify: FastifyInstance, options: HTTPInjectOptions) {
 
   return {
     status: response.statusCode,
-    headers: response.headers,
+    headers: response.headers as any,
     body: JSON.parse(response.payload)
   };
 }

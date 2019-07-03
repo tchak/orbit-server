@@ -41,14 +41,14 @@ class DisposableJSONAPISource extends JSONAPISource implements Updatable {
   ) => Promise<any>;
   async _update(transform: Transform): Promise<any> {
     const transforms = await this._push(transform);
-    const records = clone(transforms[0].operations.map(
-      (operation: RecordOperation) => {
+    const records = clone(
+      transforms[0].operations.map((operation: RecordOperation) => {
         if (operation.op === 'removeRecord') {
           return operation.record;
         }
         return memory.cache.query(q => q.findRecord(operation.record));
-      }
-    ));
+      })
+    );
     // mock operations request response
     if (records.length === 6) {
       records[1].attributes = { name: 'Moon' };

@@ -60,6 +60,7 @@ class JSONAPIFastifyServer extends JSONAPIServer {
           headers,
           params: {
             ...params,
+            url: parseURL(raw.url as string),
             id,
             include,
             filter,
@@ -74,6 +75,10 @@ class JSONAPIFastifyServer extends JSONAPIServer {
       }
     };
   }
+}
+
+function parseURL(url: string) {
+  return url.split('?')[0];
 }
 
 function parseQueryString(url: string) {
