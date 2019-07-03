@@ -42,6 +42,7 @@ export interface DefaultParams {
   relationship?: string;
   include?: string;
   filter?: Record<string, string>;
+  page?: Record<string, string>;
   sort?: string;
 }
 

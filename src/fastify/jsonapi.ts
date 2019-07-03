@@ -55,16 +55,19 @@ class JSONAPIFastifyServer extends JSONAPIServer {
       url,
       method,
       async handler({ params: { id }, raw, headers, body }, reply) {
-        const { include, filter, sort } = parseQueryString(raw.url as string);
+        const [url, { include, filter, sort, page }] = parseURL(
+          raw.url as string
+        );
         const [status, responseHeaders, responseBody] = await handler({
           headers,
           params: {
             ...params,
-            url: parseURL(raw.url as string),
+            url,
             id,
             include,
             filter,
-            sort
+            sort,
+            page
           },
           body,
           context
@@ -78,13 +81,10 @@ class JSONAPIFastifyServer extends JSONAPIServer {
 }
 
 function parseURL(url: string) {
-  return url.split('?')[0];
-}
-
-function parseQueryString(url: string) {
-  const query = qs.parse(url.split('?')[1]);
-  for (let key of ['filter', 'include']) {
+  const [path, queryString] = url.split('?');
+  const query = qs.parse(queryString);
+  for (let key of ['filter', 'page']) {
     query[key] = qs.parse(query[key]);
   }
-  return query;
+  return [path, query];
 }
