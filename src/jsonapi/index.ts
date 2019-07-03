@@ -493,6 +493,7 @@ export class JSONAPIServer {
       let attribute = this.serializer.recordAttribute(type, property);
       if (this.schema.hasAttribute(type, attribute)) {
         params.push({
+          op: 'equal',
           attribute,
           value: filter[property]
         });

@@ -370,6 +370,7 @@ function filterQBParams(
   for (let attribute in where) {
     if (schema.hasAttribute(type, attribute)) {
       params.push({
+        op: 'equal',
         attribute,
         value: where[attribute]
       });
