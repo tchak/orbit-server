@@ -59,10 +59,10 @@ class JSONAPIFastifyServer extends JSONAPIServer {
           raw.url as string
         );
         const [status, responseHeaders, responseBody] = await handler({
+          url,
           headers,
           params: {
             ...params,
-            url,
             id,
             include,
             filter,

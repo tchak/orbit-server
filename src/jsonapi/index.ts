@@ -36,7 +36,6 @@ interface ErrorsDocument {
 }
 
 export interface DefaultParams {
-  url: string;
   type: string;
   id?: string;
   relationship?: string;
@@ -58,6 +57,7 @@ export interface RelationshipParams extends DefaultParams {
 type Headers = Record<string, string>;
 
 export interface JSONAPIRequest<Params = DefaultParams> {
+  url: string;
   params: Params;
   headers: Headers;
   context: Context;
@@ -281,8 +281,9 @@ export class JSONAPIServer {
   }
 
   protected async handleAddRecord({
+    url,
     body,
-    params: { url, include },
+    params: { include },
     headers,
     context
   }: JSONAPIRequest): Promise<JSONAPIResponse> {
