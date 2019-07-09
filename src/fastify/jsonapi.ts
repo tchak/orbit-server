@@ -2,11 +2,20 @@ import { FastifyInstance, RouteOptions } from 'fastify';
 import plugin from 'fastify-plugin';
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import qs from 'qs';
+import { JSONAPISerializerSettings, JSONAPISerializer } from '@orbit/jsonapi';
 
 import Context from '../context';
 import { JSONAPIServer, RouteDefinition } from '../jsonapi';
 
-interface JSONAPIFastifySettings {
+export interface JSONAPIConfig {
+  readonly?: boolean;
+  SerializerClass?: new (
+    settings: JSONAPISerializerSettings
+  ) => JSONAPISerializer;
+}
+
+export interface JSONAPIFastifySettings {
+  config?: JSONAPIConfig;
   context: Context;
 }
 
@@ -15,8 +24,11 @@ export default plugin<
   IncomingMessage,
   OutgoingMessage,
   JSONAPIFastifySettings
->(function(fastify: FastifyInstance, { context }, next) {
-  const server = new JSONAPIFastifyServer({ schema: context.source.schema });
+>(function(fastify: FastifyInstance, { context, config }, next) {
+  const server = new JSONAPIFastifyServer({
+    schema: context.source.schema,
+    ...config
+  });
 
   fastify.register(server.createHandler(context));
   next();

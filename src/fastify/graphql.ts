@@ -1,13 +1,15 @@
 import { FastifyInstance } from 'fastify';
 import plugin from 'fastify-plugin';
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
-import { ApolloServer, Config } from 'apollo-server-fastify';
+import { ApolloServer, Config as GraphQLConfig } from 'apollo-server-fastify';
+
+export { GraphQLConfig };
 
 import Context from '../context';
 import { makeExecutableSchema } from '../graphql';
 
 export interface GraphQLFastifySettings {
-  config?: Config;
+  config?: GraphQLConfig;
   context: Context;
 }
 

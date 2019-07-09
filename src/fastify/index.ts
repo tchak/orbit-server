@@ -6,35 +6,38 @@ import favicon from 'fastify-favicon';
 
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import { PubSubEngine } from 'graphql-subscriptions';
-import { Config } from 'apollo-server-fastify';
 
 import Source from '../source';
 import fastifySchema from './schema';
-import fastifyJSONAPI from './jsonapi';
-import fastifyGraphQL, { GraphQLFastifySettings } from './graphql';
+import fastifyJSONAPI, {
+  JSONAPIFastifySettings,
+  JSONAPIConfig
+} from './jsonapi';
+import fastifyGraphQL, {
+  GraphQLFastifySettings,
+  GraphQLConfig
+} from './graphql';
 
 export { fastifyJSONAPI, fastifyGraphQL };
 
 export interface ServerSettings {
   source: Source;
   pubsub?: PubSubEngine;
-  jsonapi?: boolean;
-  graphql?: boolean | Config;
+  jsonapi?: boolean | JSONAPIConfig;
+  graphql?: boolean | GraphQLConfig;
   inflections?: boolean;
   cors?: boolean;
-  helmet?: helmet.FastifyHelmetOptions | boolean;
+  helmet?: boolean | helmet.FastifyHelmetOptions;
 }
 
 export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
   function(fastify: FastifyInstance, settings, next) {
     fastify.register(favicon);
 
-    if (settings.helmet !== false) {
-      if (settings.helmet === true || !settings.helmet) {
-        fastify.register(helmet);
-      } else {
-        fastify.register(helmet, settings.helmet);
-      }
+    if (typeof settings.helmet === 'object') {
+      fastify.register(helmet, settings.helmet);
+    } else if (settings.helmet !== false) {
+      fastify.register(helmet);
     }
 
     if (settings.cors !== false) {
@@ -50,7 +53,12 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
     });
 
     if (settings.jsonapi) {
-      fastify.register(fastifyJSONAPI, { context });
+      let options: JSONAPIFastifySettings = { context };
+
+      if (typeof settings.jsonapi === 'object') {
+        options.config = settings.jsonapi;
+      }
+      fastify.register(fastifyJSONAPI, options);
     }
 
     if (settings.graphql) {

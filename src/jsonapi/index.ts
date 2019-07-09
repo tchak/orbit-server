@@ -105,6 +105,7 @@ export interface RouteDefinition {
 
 export interface JSONAPIServerSettings {
   schema: Schema;
+  readonly?: boolean;
   SerializerClass?: new (
     settings: JSONAPISerializerSettings
   ) => JSONAPISerializer;
@@ -112,6 +113,7 @@ export interface JSONAPIServerSettings {
 
 export class JSONAPIServer {
   readonly schema: Schema;
+  readonly readonly: boolean;
   protected readonly serializer: JSONAPISerializer;
 
   constructor(settings: JSONAPIServerSettings) {
@@ -121,6 +123,7 @@ export class JSONAPIServer {
     this.serializer = new SerializerClass({
       schema: settings.schema
     });
+    this.readonly = settings.readonly === true;
   }
 
   eachRoute(callback: (prefix: string, route: RouteDefinition[]) => void) {
@@ -128,14 +131,16 @@ export class JSONAPIServer {
       callback(this.serializer.resourceType(type), this.resourceRoutes(type));
     }
 
-    callback('operations', [
-      {
-        method: HTTPMethods.Patch,
-        url: '/',
-        params: { type: 'operations' },
-        handler: this.handleOperations.bind(this)
-      }
-    ]);
+    if (!this.readonly) {
+      callback('operations', [
+        {
+          method: HTTPMethods.Patch,
+          url: '/',
+          params: { type: 'operations' },
+          handler: this.handleOperations.bind(this)
+        }
+      ]);
+    }
   }
 
   handleError(error: Error): [number, ErrorsDocument] {
@@ -170,30 +175,35 @@ export class JSONAPIServer {
         handler: this.handleFindRecords.bind(this)
       },
       {
-        method: HTTPMethods.Post,
-        url: '/',
-        params: { type },
-        handler: this.handleAddRecord.bind(this)
-      },
-      {
         method: HTTPMethods.Get,
         url: `/:id`,
         params: { type },
         handler: this.handleFindRecord.bind(this)
-      },
-      {
-        method: HTTPMethods.Patch,
-        url: `/:id`,
-        params: { type },
-        handler: this.handleUpdateRecord.bind(this)
-      },
-      {
-        method: HTTPMethods.Delete,
-        url: `/:id`,
-        params: { type },
-        handler: this.handleRemoveRecord.bind(this)
       }
     ];
+
+    if (!this.readonly) {
+      routes.push(
+        {
+          method: HTTPMethods.Patch,
+          url: `/:id`,
+          params: { type },
+          handler: this.handleUpdateRecord.bind(this)
+        },
+        {
+          method: HTTPMethods.Delete,
+          url: `/:id`,
+          params: { type },
+          handler: this.handleRemoveRecord.bind(this)
+        },
+        {
+          method: HTTPMethods.Post,
+          url: '/',
+          params: { type },
+          handler: this.handleAddRecord.bind(this)
+        }
+      );
+    }
 
     this.schema.eachRelationship(type, (property, { type: kind }) => {
       const url = `/:id/relationships/${this.serializer.resourceRelationship(
@@ -208,24 +218,28 @@ export class JSONAPIServer {
           params: { type, relationship: property },
           handler: this.handleFindRelatedRecords.bind(this)
         });
-        routes.push({
-          method: HTTPMethods.Post,
-          url,
-          params: { type, relationship: property },
-          handler: this.handleAddToRelatedRecords.bind(this)
-        });
-        routes.push({
-          method: HTTPMethods.Delete,
-          url,
-          params: { type, relationship: property },
-          handler: this.handleRemoveFromRelatedRecords.bind(this)
-        });
-        routes.push({
-          method: HTTPMethods.Patch,
-          url,
-          params: { type, relationship: property },
-          handler: this.handleReplaceRelatedRecords.bind(this)
-        });
+        if (!this.readonly) {
+          routes.push(
+            {
+              method: HTTPMethods.Post,
+              url,
+              params: { type, relationship: property },
+              handler: this.handleAddToRelatedRecords.bind(this)
+            },
+            {
+              method: HTTPMethods.Delete,
+              url,
+              params: { type, relationship: property },
+              handler: this.handleRemoveFromRelatedRecords.bind(this)
+            },
+            {
+              method: HTTPMethods.Patch,
+              url,
+              params: { type, relationship: property },
+              handler: this.handleReplaceRelatedRecords.bind(this)
+            }
+          );
+        }
       } else {
         routes.push({
           method: HTTPMethods.Get,
@@ -233,12 +247,14 @@ export class JSONAPIServer {
           params: { type, relationship: property },
           handler: this.handleFindRelatedRecord.bind(this)
         });
-        routes.push({
-          method: HTTPMethods.Patch,
-          url,
-          params: { type, relationship: property },
-          handler: this.handleReplaceRelatedRecord.bind(this)
-        });
+        if (!this.readonly) {
+          routes.push({
+            method: HTTPMethods.Patch,
+            url,
+            params: { type, relationship: property },
+            handler: this.handleReplaceRelatedRecord.bind(this)
+          });
+        }
       }
     });
 
