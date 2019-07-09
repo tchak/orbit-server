@@ -6,6 +6,7 @@ import favicon from 'fastify-favicon';
 
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import { PubSubEngine } from 'graphql-subscriptions';
+import { Transform, RecordOperation } from '@orbit/data';
 
 import Source from '../source';
 import fastifySchema from './schema';
@@ -70,7 +71,22 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
       fastify.register(fastifyGraphQL, options);
     }
 
-    fastify.addHook('onClose', (_, done) => source.disconnect().then(done));
+    function transformListener(transform: Transform) {
+      if (pubsub) {
+        for (let operation of transform.operations as RecordOperation[]) {
+          pubsub.publish(operation.record.type, operation);
+        }
+      }
+    }
+
+    if (pubsub) {
+      source.on('transform', transformListener);
+    }
+
+    fastify.addHook('onClose', (_, done) => {
+      source.off('transform', transformListener);
+      source.disconnect().then(done);
+    });
 
     next();
   }
