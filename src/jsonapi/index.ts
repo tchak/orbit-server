@@ -15,6 +15,7 @@ import {
 import {
   ResourceDocument,
   JSONAPISerializer,
+  JSONAPISerializerSettings,
   ResourceOperationsDocument
 } from '@orbit/jsonapi';
 
@@ -104,6 +105,9 @@ export interface RouteDefinition {
 
 export interface JSONAPIServerSettings {
   schema: Schema;
+  SerializerClass?: new (
+    settings: JSONAPISerializerSettings
+  ) => JSONAPISerializer;
 }
 
 export class JSONAPIServer {
@@ -112,7 +116,11 @@ export class JSONAPIServer {
 
   constructor(settings: JSONAPIServerSettings) {
     this.schema = settings.schema;
-    this.serializer = new JSONAPISerializer({ schema: settings.schema });
+
+    const SerializerClass = settings.SerializerClass || JSONAPISerializer;
+    this.serializer = new SerializerClass({
+      schema: settings.schema
+    });
   }
 
   eachRoute(callback: (prefix: string, route: RouteDefinition[]) => void) {
