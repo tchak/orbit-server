@@ -106,65 +106,65 @@
     universal-user-agent "^2.0.0"
     url-template "^2.0.8"
 
-"@orbit/core@^0.16.0-beta.8":
-  version "0.16.0-beta.8"
-  resolved "https://registry.yarnpkg.com/@orbit/core/-/core-0.16.0-beta.8.tgz#7296f524efc864f270988c62f0ba46fb2b3fa7ae"
-  integrity sha512-rM9NdNCmid4IVzvIss1Uoq2s4udHMPGqI8CIXrLYpbFpdDQmPAxdy2QO9mnrx0gA17oQr1KCAtDBDBa1n83PdA==
+"@orbit/core@^0.16.0-beta.9":
+  version "0.16.0-beta.9"
+  resolved "https://registry.yarnpkg.com/@orbit/core/-/core-0.16.0-beta.9.tgz#a760926b94d4b0f44a3e7e2908ca7723db28f878"
+  integrity sha512-kBBSChKsKp7jvdgS751ACMF80WbRauvIBffnrfCGRfOCDyK57JPi9kPQ5O6yQpCNB/dVWTsvwxudi5tB03jk4g==
   dependencies:
-    "@orbit/utils" "^0.16.0-beta.8"
+    "@orbit/utils" "^0.16.0-beta.9"
 
-"@orbit/data@^0.16.0-beta.8":
-  version "0.16.0-beta.8"
-  resolved "https://registry.yarnpkg.com/@orbit/data/-/data-0.16.0-beta.8.tgz#1b7bae4d13020a9620a19347d0ff9c5fdd584915"
-  integrity sha512-U9l4j+pQPjPg4AQpDYO6nggRBUySspuVLm/beo705Bk+twbqfqCZ/4257BNuU+qtPciQTpTTrXy3aQweCj2MAQ==
+"@orbit/data@^0.16.0-beta.10":
+  version "0.16.0-beta.10"
+  resolved "https://registry.yarnpkg.com/@orbit/data/-/data-0.16.0-beta.10.tgz#8660d754443deba5067c2d6d1a85b9b9ad389214"
+  integrity sha512-QHwzyjNJKdp9xc9+a9iJiCvEOB7/D8BGtSUrCh/GeEeoUOfoAJ0KZbPn0qpcdrRVLfuVcSncGD0d8rgkFVA7IQ==
   dependencies:
-    "@orbit/core" "^0.16.0-beta.8"
-    "@orbit/utils" "^0.16.0-beta.8"
+    "@orbit/core" "^0.16.0-beta.9"
+    "@orbit/utils" "^0.16.0-beta.9"
 
-"@orbit/immutable@^0.16.0-beta.8":
-  version "0.16.0-beta.8"
-  resolved "https://registry.yarnpkg.com/@orbit/immutable/-/immutable-0.16.0-beta.8.tgz#14efc6c28ee4ccc704f31be309225bfd1aa2a4d1"
-  integrity sha512-AIn2YhQwnN5hxeCPqjKxi2q4f56IjHhorHT7t/75MbM/HND88NOd1nnZ1YausWB9NZcASuKN9KzteEHfG1lhGA==
+"@orbit/immutable@^0.16.0-beta.9":
+  version "0.16.0-beta.9"
+  resolved "https://registry.yarnpkg.com/@orbit/immutable/-/immutable-0.16.0-beta.9.tgz#eef6e0fb525615d590d07c0cac927e9e37d83552"
+  integrity sha512-jqEB1dl8MFkQ1YaDQEkUwccauPy1HRTrKHvz4Q6wMNmRxp5D3z36OQG8N8g0E5JiOVmDe4DKbHJvT6sNNSFRvA==
 
-"@orbit/jsonapi@^0.16.0-beta.8":
-  version "0.16.0-beta.8"
-  resolved "https://registry.yarnpkg.com/@orbit/jsonapi/-/jsonapi-0.16.0-beta.8.tgz#93b76e460b7334f4da8ecbe8cdc392f0b161a91d"
-  integrity sha512-SNRtfhZbObXbOEsANaTKTFDxk4nyjUm45iBsJGYhBV82cXK04RQ8EmDnlJXfJ0IndT2NVt/8yBr6Gw3JIlqnIw==
+"@orbit/jsonapi@^0.16.0-beta.10":
+  version "0.16.0-beta.10"
+  resolved "https://registry.yarnpkg.com/@orbit/jsonapi/-/jsonapi-0.16.0-beta.10.tgz#ed693f27256523408ea6dd51ab1aee8f5a089807"
+  integrity sha512-Wz3Ru6fxwp1GAY56UF/OO85pEHSDRrIvJISIx96j9/WsGWLsQTsyE10555LFgMNRTXaBkjATHZVsLhCCOVSEiw==
   dependencies:
-    "@orbit/core" "^0.16.0-beta.8"
-    "@orbit/data" "^0.16.0-beta.8"
-    "@orbit/serializers" "^0.16.0-beta.8"
-    "@orbit/utils" "^0.16.0-beta.8"
+    "@orbit/core" "^0.16.0-beta.9"
+    "@orbit/data" "^0.16.0-beta.10"
+    "@orbit/serializers" "^0.16.0-beta.9"
+    "@orbit/utils" "^0.16.0-beta.9"
 
-"@orbit/memory@^0.16.0-beta.8":
-  version "0.16.0-beta.8"
-  resolved "https://registry.yarnpkg.com/@orbit/memory/-/memory-0.16.0-beta.8.tgz#ea3061d87b511718d53d8eba0d00c55b8bfe7750"
-  integrity sha512-C5QxIohSz1Q07fxZfosuMGAM6nBxQOjsV5dXGDBZ65EAWShUcegxsmsT5SqbbKyXFrfiP9J5wcfxJFoMzKyGKA==
+"@orbit/memory@^0.16.0-beta.10":
+  version "0.16.0-beta.10"
+  resolved "https://registry.yarnpkg.com/@orbit/memory/-/memory-0.16.0-beta.10.tgz#9cb80b79183ba62d5a94ba331b235fef03255067"
+  integrity sha512-EbfBFUIUOf2Cjs/hiHv6lrVVtW4FRNEKA6FJVLsPr3SiO3wmzYlupNZqDYhhcM9AzHK3VtD2udk7tzeM3qVSFw==
   dependencies:
-    "@orbit/core" "^0.16.0-beta.8"
-    "@orbit/data" "^0.16.0-beta.8"
-    "@orbit/immutable" "^0.16.0-beta.8"
-    "@orbit/record-cache" "^0.16.0-beta.8"
-    "@orbit/utils" "^0.16.0-beta.8"
+    "@orbit/core" "^0.16.0-beta.9"
+    "@orbit/data" "^0.16.0-beta.10"
+    "@orbit/immutable" "^0.16.0-beta.9"
+    "@orbit/record-cache" "^0.16.0-beta.10"
+    "@orbit/utils" "^0.16.0-beta.9"
 
-"@orbit/record-cache@^0.16.0-beta.8":
-  version "0.16.0-beta.8"
-  resolved "https://registry.yarnpkg.com/@orbit/record-cache/-/record-cache-0.16.0-beta.8.tgz#2c1aebe6e6182b8bf12fdeeddfa24da10a314f7c"
-  integrity sha512-5Sd3dwBiYX3ZGtbZDQTJ7mxCxXkkGgjDRiKuUz9Fp71gW21HwFCYHAUkJc7kZsnW+ViVrylgZS9ljWRN+TBk8A==
+"@orbit/record-cache@^0.16.0-beta.10":
+  version "0.16.0-beta.10"
+  resolved "https://registry.yarnpkg.com/@orbit/record-cache/-/record-cache-0.16.0-beta.10.tgz#6c4da1ed88c27894e8af41037ae2e6286d0a202e"
+  integrity sha512-u8DHGqCLxdEABYBgm2RGr2p6YAzePsdVl76WJrJPWg0oQSf/uF7KvAkQAQG04PDloJ2izHaiX1pTK3gipzZP7A==
   dependencies:
-    "@orbit/core" "^0.16.0-beta.8"
-    "@orbit/data" "^0.16.0-beta.8"
-    "@orbit/utils" "^0.16.0-beta.8"
+    "@orbit/core" "^0.16.0-beta.9"
+    "@orbit/data" "^0.16.0-beta.10"
+    "@orbit/utils" "^0.16.0-beta.9"
 
-"@orbit/serializers@^0.16.0-beta.8":
-  version "0.16.0-beta.8"
-  resolved "https://registry.yarnpkg.com/@orbit/serializers/-/serializers-0.16.0-beta.8.tgz#6aa1e9373045302355cfaceb5d5de7de05b89e08"
-  integrity sha512-eMzTCs+bfp3Qj8w44AJNOZCs8E0vFU+KlWOpK5D46S6tS5cNQedJ6G2VKgSbFnW2qhsi3SI2729nh/wfbx1W5g==
+"@orbit/serializers@^0.16.0-beta.9":
+  version "0.16.0-beta.9"
+  resolved "https://registry.yarnpkg.com/@orbit/serializers/-/serializers-0.16.0-beta.9.tgz#405bc6a72229be001bbac81da5b6e97bea314cd5"
+  integrity sha512-jYYy00oxQZtw4olGFo9JPoQgv1025/nbyVKENU/29JGqtURJ9YicS/QcqzIVBf+pVR2ld/8gj4KWo0HWrg/SFQ==
 
-"@orbit/utils@^0.16.0-beta.8":
-  version "0.16.0-beta.8"
-  resolved "https://registry.yarnpkg.com/@orbit/utils/-/utils-0.16.0-beta.8.tgz#5ed7a8662c8f83a1326e7189f7e75b1e687c096f"
-  integrity sha512-Rhay7vFA0976NCOnp1Hujx6auxzE7crzOd2YloNomqay6kNBACziwfWzgkTnPiOsEIXQI+h0sGtYwZPcuQC41Q==
+"@orbit/utils@^0.16.0-beta.9":
+  version "0.16.0-beta.9"
+  resolved "https://registry.yarnpkg.com/@orbit/utils/-/utils-0.16.0-beta.9.tgz#9846c6f1ca1b19bdde48e50aa09c2efe6efb1841"
+  integrity sha512-+2AP8WsyuD2rw+X/kyQzD7q2R0mholgOoxf53oSverrEMOV2ajjqZow+q9wLfGJ6Sd2eaOV+ZK1wkYCAr4isjg==
 
 "@protobufjs/aspromise@^1.1.1", "@protobufjs/aspromise@^1.1.2":
   version "1.1.2"
@@ -304,10 +304,10 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.14.8.tgz#fe444203ecef1162348cd6deb76c62477b2cc6e9"
   integrity sha512-I4+DbJEhLEg4/vIy/2gkWDvXBOOtPKV9EnLhYjMoqxcRW+TTZtUftkHktz/a8suoD5mUL7m6ReLrkPvSsCQQmw==
 
-"@types/node@^12.6.1":
-  version "12.6.1"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.6.1.tgz#d5544f6de0aae03eefbb63d5120f6c8be0691946"
-  integrity sha512-rp7La3m845mSESCgsJePNL/JQyhkOJA6G4vcwvVgkDAwHhGdq5GCumxmPjEk1MZf+8p5ZQAUE7tqgQRQTXN7uQ==
+"@types/node@^12.6.2":
+  version "12.6.2"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.6.2.tgz#a5ccec6abb6060d5f20d256fb03ed743e9774999"
+  integrity sha512-gojym4tX0FWeV2gsW4Xmzo5wxGjXGm550oVUII7f7G5o4BV6c7DBdiG1RRQd+y1bvqRyYtPfMK85UM95vsapqQ==
 
 "@types/qs@^6.5.3":
   version "6.5.3"
@@ -548,6 +548,32 @@ apollo-server-core@2.6.7:
     subscriptions-transport-ws "^0.9.11"
     ws "^6.0.0"
 
+apollo-server-core@2.6.8:
+  version "2.6.8"
+  resolved "https://registry.yarnpkg.com/apollo-server-core/-/apollo-server-core-2.6.8.tgz#c8758b5f26b5f3b9fef51b911265b80a9ce5251d"
+  integrity sha512-Jxw+6R/2I2LiZ6kjRFTzPpdjw7HfuVLfNU+svgNlxioLducxBH/wqUs3qYTf4eVUUtWy+nSS/BUf/Ullo+Ur0Q==
+  dependencies:
+    "@apollographql/apollo-tools" "^0.3.6"
+    "@apollographql/graphql-playground-html" "1.6.20"
+    "@types/ws" "^6.0.0"
+    apollo-cache-control "0.7.4"
+    apollo-datasource "0.5.0"
+    apollo-engine-reporting "1.3.5"
+    apollo-server-caching "0.4.0"
+    apollo-server-env "2.4.0"
+    apollo-server-errors "2.3.0"
+    apollo-server-plugin-base "0.5.7"
+    apollo-tracing "0.7.3"
+    fast-json-stable-stringify "^2.0.0"
+    graphql-extensions "0.7.6"
+    graphql-subscriptions "^1.0.0"
+    graphql-tag "^2.9.2"
+    graphql-tools "^4.0.0"
+    graphql-upload "^8.0.2"
+    sha.js "^2.4.11"
+    subscriptions-transport-ws "^0.9.11"
+    ws "^6.0.0"
+
 apollo-server-env@2.4.0:
   version "2.4.0"
   resolved "https://registry.yarnpkg.com/apollo-server-env/-/apollo-server-env-2.4.0.tgz#6611556c6b627a1636eed31317d4f7ea30705872"
@@ -561,13 +587,13 @@ apollo-server-errors@2.3.0:
   resolved "https://registry.yarnpkg.com/apollo-server-errors/-/apollo-server-errors-2.3.0.tgz#700622b66a16dffcad3b017e4796749814edc061"
   integrity sha512-rUvzwMo2ZQgzzPh2kcJyfbRSfVKRMhfIlhY7BzUfM4x6ZT0aijlgsf714Ll3Mbf5Fxii32kD0A/DmKsTecpccw==
 
-apollo-server-fastify@^2.6.7:
-  version "2.6.7"
-  resolved "https://registry.yarnpkg.com/apollo-server-fastify/-/apollo-server-fastify-2.6.7.tgz#8f906bd41fccc66df0d7fb270f0398857a116ec3"
-  integrity sha512-E18F56u1lfnD2l1o8LOuSKkIHJe2Wp770f97uXhZSopabUt0YbkkOfM6kKTjZbu85/XlikXzbQThdwkkXPOlag==
+apollo-server-fastify@^2.6.8:
+  version "2.6.8"
+  resolved "https://registry.yarnpkg.com/apollo-server-fastify/-/apollo-server-fastify-2.6.8.tgz#584f0787216edd0cfdc969d9ee78f7e5eb8a442b"
+  integrity sha512-MHkSjqA/1RbWAHtbk0fBXNMcbTZ8OJ6dML4sFZKAAFutrYiY+D1Waq7hEMxZj3Aj0Q6Dxb3rAkahCkFXAhQr6g==
   dependencies:
     "@apollographql/graphql-playground-html" "1.6.20"
-    apollo-server-core "2.6.7"
+    apollo-server-core "2.6.8"
     fastify-accepts "^0.5.0"
     fastify-cors "^0.2.0"
     graphql-subscriptions "^1.0.0"
@@ -577,6 +603,11 @@ apollo-server-plugin-base@0.5.6:
   version "0.5.6"
   resolved "https://registry.yarnpkg.com/apollo-server-plugin-base/-/apollo-server-plugin-base-0.5.6.tgz#3a7128437a0f845e7d873fa43ef091ff7bf27975"
   integrity sha512-wJvcPqfm/kiBwY5JZT85t2A4pcHv24xdQIpWMNt1zsnx77lIZqJmhsc22eSUSrlnYqUMXC4XMVgSUfAO4oI9wg==
+
+apollo-server-plugin-base@0.5.7:
+  version "0.5.7"
+  resolved "https://registry.yarnpkg.com/apollo-server-plugin-base/-/apollo-server-plugin-base-0.5.7.tgz#267faeb5c2de7fa8d3be469cb99f82f601be7aed"
+  integrity sha512-HeEwEZ92c2XYRV+0CFLbstW3vUJ4idCxR9E9Q3wwvhXrq8gaGzqyDoC8EzAzRxCJUKcEn7xQOpT/AUTC/KtkRA==
 
 apollo-tracing@0.7.3:
   version "0.7.3"
@@ -2379,6 +2410,11 @@ inherits@2, inherits@2.0.3, inherits@^2.0.1, inherits@^2.0.3, inherits@~2.0.3:
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.3.tgz#633c2c83e3da42a502f52466022480f4208261de"
   integrity sha1-Yzwsg+PaQqUC9SRmAiSA9CCCYd4=
 
+inherits@~2.0.4:
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.4.tgz#0fa2c64f932917c3433a0ded55363aae37416b7c"
+  integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
+
 ini@^1.3.4, ini@~1.3.0:
   version "1.3.5"
   resolved "https://registry.yarnpkg.com/ini/-/ini-1.3.5.tgz#eee25f56db1c9ec6085e0c22778083f596abf927"
@@ -2813,20 +2849,20 @@ kind-of@^6.0.0, kind-of@^6.0.2:
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.2.tgz#01146b36a6218e64e58f3a8d66de5d7fc6f6d051"
   integrity sha512-s5kLOcnH0XqDO+FvuaLX8DDjZ18CGFk7VygH40QoKPUQhW4e2rvM0rwUq0t8IQDOwYSeLK01U90OjzBTme2QqA==
 
-knex@^0.18.3:
-  version "0.18.3"
-  resolved "https://registry.yarnpkg.com/knex/-/knex-0.18.3.tgz#d6e0ed263c9f29ca31721f446364e91252543f72"
-  integrity sha512-+UGXPW/FFSOtPSB1KrWslmFntwiSUuMGp5BkheO6pT3cGaLQSJ9wLKYgqOPkyUIK9xDkKraj+OfPXCkQHwldLw==
+knex@^0.18.4:
+  version "0.18.4"
+  resolved "https://registry.yarnpkg.com/knex/-/knex-0.18.4.tgz#2f8e5903265c313e9120c49879132d2e6f312ad3"
+  integrity sha512-BnCU+Xsvv05AUOKZ5hh9xbG1pbZkjhHlJSeBL7BCbTDIum5eyNIs8/jYaHa7nheonQpKCWez3/xne4OBndNaEg==
   dependencies:
     bluebird "^3.5.5"
     colorette "1.0.8"
     commander "^2.20.0"
     debug "4.1.1"
     getopts "2.2.4"
-    inherits "~2.0.3"
+    inherits "~2.0.4"
     interpret "^1.2.0"
     liftoff "3.1.0"
-    lodash "^4.17.11"
+    lodash "^4.17.14"
     mkdirp "^0.5.1"
     pg-connection-string "2.0.0"
     tarn "^1.1.5"
@@ -2912,6 +2948,11 @@ lodash@4.17.11, lodash@^4.17.11:
   version "4.17.11"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.11.tgz#b39ea6229ef607ecd89e2c8df12536891cac9b8d"
   integrity sha512-cQKh8igo5QUhZ7lg38DYWAxMvjSAKG0A8wGSVimP07SIUEK2UO+arSRKbRZWtelMtN5V0Hkwh5ryOto/SshYIg==
+
+lodash@^4.17.14:
+  version "4.17.14"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.14.tgz#9ce487ae66c96254fe20b599f21b6816028078ba"
+  integrity sha512-mmKYbW3GLuJeX+iGP+Y7Gp1AiGHGbXHCOh/jZmrawMmsE7MS4znI3RL2FsjbqOyMayHInjOeykW7PEajUk1/xw==
 
 log-symbols@^2.2.0:
   version "2.2.0"

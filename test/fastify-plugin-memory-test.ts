@@ -10,18 +10,14 @@ import tests, { Subject } from './support/fastify-plugin-shared';
 import { Plugin } from '../src';
 
 let fastify: FastifyInstance;
-let source: DisposableMemorySource;
-let subject: Subject = { fastify: Fastify() };
-
-class DisposableMemorySource extends MemorySource {
-  async disconnect() {}
-}
+let source: MemorySource;
+let subject: Subject = {};
 
 module('Orbit Fastify Plugin (memory)', function(hooks: Hooks) {
   // @ts-ignore
   hooks.beforeEach(() => {
     fastify = Fastify();
-    source = new DisposableMemorySource({ schema });
+    source = new MemorySource({ schema });
     fastify.register(Plugin, {
       source,
       pubsub: new PubSub(),
@@ -37,5 +33,5 @@ module('Orbit Fastify Plugin (memory)', function(hooks: Hooks) {
     await fastify.close();
   });
 
-  tests(subject);
+  tests(subject, 'memory');
 });

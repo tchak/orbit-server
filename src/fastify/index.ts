@@ -85,7 +85,7 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
 
     fastify.addHook('onClose', (_, done) => {
       source.off('transform', transformListener);
-      source.disconnect().then(done);
+      source.deactivate().then(done);
     });
 
     next();

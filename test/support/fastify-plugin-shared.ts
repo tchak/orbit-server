@@ -5,20 +5,22 @@ import { uuid } from '@orbit/utils';
 import qs from 'qs';
 
 export interface Subject {
-  fastify: FastifyInstance;
+  fastify?: FastifyInstance;
 }
 
-export default function(subject: Subject) {
+QUnit.config.testTimeout = 1000;
+
+export default function(subject: Subject, sourceName: string) {
   module('jsonapi', function() {
     test('get planets (empty)', async function(assert: Assert) {
-      const response = await getPlanets(subject.fastify);
+      const response = await getPlanets(subject.fastify as FastifyInstance);
 
       assert.equal(response.status, 200);
       assert.deepEqual(response.body, { data: [] });
     });
 
     test('create planet', async function(assert: Assert) {
-      const response = await createEarth(subject.fastify);
+      const response = await createEarth(subject.fastify as FastifyInstance);
 
       assert.equal(response.status, 201);
       assert.equal(
@@ -37,18 +39,18 @@ export default function(subject: Subject) {
     });
 
     test('get planets', async function(assert: Assert) {
-      await createEarth(subject.fastify);
-      const response = await getPlanets(subject.fastify);
+      await createEarth(subject.fastify as FastifyInstance);
+      const response = await getPlanets(subject.fastify as FastifyInstance);
 
       assert.equal(response.status, 200);
       assert.equal(response.body.data.length, 1);
     });
 
     test('get planet', async function(assert: Assert) {
-      const { body } = await createEarth(subject.fastify);
+      const { body } = await createEarth(subject.fastify as FastifyInstance);
       const id = body.data.id;
 
-      const response = await getPlanet(subject.fastify, id);
+      const response = await getPlanet(subject.fastify as FastifyInstance, id);
 
       assert.equal(response.status, 200);
       assert.deepEqual(response.body.data, {
@@ -62,10 +64,10 @@ export default function(subject: Subject) {
     });
 
     test('update planet', async function(assert: Assert) {
-      const { body } = await createEarth(subject.fastify);
+      const { body } = await createEarth(subject.fastify as FastifyInstance);
       const id = body.data.id;
 
-      const response = await request(subject.fastify, {
+      const response = await request(subject.fastify as FastifyInstance, {
         method: 'PATCH',
         url: `/planets/${id}`,
         payload: {
@@ -84,7 +86,7 @@ export default function(subject: Subject) {
       const {
         status,
         body: { data }
-      } = await getPlanet(subject.fastify, id);
+      } = await getPlanet(subject.fastify as FastifyInstance, id);
 
       assert.equal(status, 200);
       assert.deepEqual(data, {
@@ -98,46 +100,54 @@ export default function(subject: Subject) {
     });
 
     test('remove planet', async function(assert: Assert) {
-      const { body } = await createEarth(subject.fastify);
+      const { body } = await createEarth(subject.fastify as FastifyInstance);
       const id = body.data.id;
 
-      const response = await request(subject.fastify, {
+      const response = await request(subject.fastify as FastifyInstance, {
         method: 'DELETE',
         url: `/planets/${id}`
       });
 
       assert.equal(response.status, 204);
 
-      const { status } = await getPlanet(subject.fastify, id);
+      const { status } = await getPlanet(
+        subject.fastify as FastifyInstance,
+        id
+      );
 
       assert.equal(status, 404);
     });
 
     test('create moon', async function(assert: Assert) {
-      const { body } = await createEarth(subject.fastify);
+      const { body } = await createEarth(subject.fastify as FastifyInstance);
       const id = body.data.id;
 
-      const response = await createMoon(subject.fastify, id);
+      const response = await createMoon(subject.fastify as FastifyInstance, id);
 
       assert.equal(response.status, 201);
     });
 
     test('get planet moons', async function(assert: Assert) {
-      const { body } = await createEarth(subject.fastify);
+      const { body } = await createEarth(subject.fastify as FastifyInstance);
       const id = body.data.id;
-      await createMoon(subject.fastify, id);
+      await createMoon(subject.fastify as FastifyInstance, id);
 
-      const response = await getPlanetMoons(subject.fastify, id);
+      const response = await getPlanetMoons(
+        subject.fastify as FastifyInstance,
+        id
+      );
 
       assert.equal(response.status, 200);
       assert.equal(response.body.data.length, 1);
     });
 
     test('create typedModels', async function(assert: Assert) {
-      const { body } = await createTypedModel(subject.fastify);
+      const { body } = await createTypedModel(
+        subject.fastify as FastifyInstance
+      );
       const id = body.data.id;
 
-      const response = await request(subject.fastify, {
+      const response = await request(subject.fastify as FastifyInstance, {
         url: `/typed-models/${id}`
       });
 
@@ -150,17 +160,20 @@ export default function(subject: Subject) {
     });
 
     test('many to many', async function(assert: Assert) {
-      const { body } = await createTag(subject.fastify);
+      const { body } = await createTag(subject.fastify as FastifyInstance);
       const id = body.data.id;
 
-      const response = await createArticle(subject.fastify, id);
+      const response = await createArticle(
+        subject.fastify as FastifyInstance,
+        id
+      );
       assert.equal(response.status, 201);
     });
 
     test('filter', async function(assert: Assert) {
-      await createTags(subject.fastify);
+      await createTags(subject.fastify as FastifyInstance);
 
-      const response = await request(subject.fastify, {
+      const response = await request(subject.fastify as FastifyInstance, {
         url: `/tags`,
         query: {
           filter: qs.stringify({
@@ -177,9 +190,9 @@ export default function(subject: Subject) {
     });
 
     test('sort (asc)', async function(assert: Assert) {
-      await createTags(subject.fastify);
+      await createTags(subject.fastify as FastifyInstance);
 
-      const response = await request(subject.fastify, {
+      const response = await request(subject.fastify as FastifyInstance, {
         url: `/tags`,
         query: {
           sort: 'name'
@@ -194,9 +207,9 @@ export default function(subject: Subject) {
     });
 
     test('sort (desc)', async function(assert: Assert) {
-      await createTags(subject.fastify);
+      await createTags(subject.fastify as FastifyInstance);
 
-      const response = await request(subject.fastify, {
+      const response = await request(subject.fastify as FastifyInstance, {
         url: `/tags`,
         query: {
           sort: '-name'
@@ -211,24 +224,28 @@ export default function(subject: Subject) {
     });
 
     test('operations', async function(assert: Assert) {
+      if (sourceName === 'jsonapi') {
+        assert.ok(true);
+        return;
+      }
       const {
         body: {
           data: { id: earthId }
         }
-      } = await createEarth(subject.fastify);
+      } = await createEarth(subject.fastify as FastifyInstance);
       const {
         body: {
           data: { id: marsId }
         }
-      } = await createMars(subject.fastify);
+      } = await createMars(subject.fastify as FastifyInstance);
       const {
         body: {
           data: { id: moonId }
         }
-      } = await createMoon(subject.fastify, earthId);
+      } = await createMoon(subject.fastify as FastifyInstance, earthId);
 
       const response = await operationsWithEarthAndMars(
-        subject.fastify,
+        subject.fastify as FastifyInstance,
         earthId,
         marsId,
         moonId
@@ -329,25 +346,28 @@ export default function(subject: Subject) {
 
   module('graphql', function() {
     test('get planets (empty)', async function(assert: Assert) {
-      const response = await getGQLPlanets(subject.fastify);
+      const response = await getGQLPlanets(subject.fastify as FastifyInstance);
 
       assert.equal(response.status, 200);
       assert.deepEqual(response.body.data, { planets: [] });
     });
 
     test('get planets', async function(assert: Assert) {
-      await createEarth(subject.fastify);
-      const response = await getGQLPlanets(subject.fastify);
+      await createEarth(subject.fastify as FastifyInstance);
+      const response = await getGQLPlanets(subject.fastify as FastifyInstance);
 
       assert.equal(response.status, 200);
       assert.equal(response.body.data.planets.length, 1);
     });
 
     test('get planet', async function(assert: Assert) {
-      const { body } = await createEarth(subject.fastify);
+      const { body } = await createEarth(subject.fastify as FastifyInstance);
       const id = body.data.id;
 
-      const response = await getGQLPlanet(subject.fastify, id);
+      const response = await getGQLPlanet(
+        subject.fastify as FastifyInstance,
+        id
+      );
 
       assert.equal(response.status, 200);
       assert.deepEqual(response.body.data.planet, {
@@ -358,11 +378,14 @@ export default function(subject: Subject) {
     });
 
     test('get planet moons', async function(assert: Assert) {
-      const { body } = await createEarth(subject.fastify);
+      const { body } = await createEarth(subject.fastify as FastifyInstance);
       const id = body.data.id;
-      await createMoon(subject.fastify, id);
+      await createMoon(subject.fastify as FastifyInstance, id);
 
-      const response = await getGQLPlanetMoons(subject.fastify, id);
+      const response = await getGQLPlanetMoons(
+        subject.fastify as FastifyInstance,
+        id
+      );
 
       assert.equal(response.status, 200);
       assert.deepEqual(response.body.data, {
@@ -382,10 +405,12 @@ export default function(subject: Subject) {
     });
 
     test('get typedModels', async function(assert: Assert) {
-      const { body } = await createTypedModel(subject.fastify);
+      const { body } = await createTypedModel(
+        subject.fastify as FastifyInstance
+      );
       const id = body.data.id;
 
-      const response = await request(subject.fastify, {
+      const response = await request(subject.fastify as FastifyInstance, {
         method: 'POST',
         url: '/graphql',
         payload: {
@@ -402,9 +427,9 @@ export default function(subject: Subject) {
     });
 
     test('filter', async function(assert: Assert) {
-      await createTags(subject.fastify);
+      await createTags(subject.fastify as FastifyInstance);
 
-      const response = await request(subject.fastify, {
+      const response = await request(subject.fastify as FastifyInstance, {
         method: 'POST',
         url: `/graphql`,
         payload: {
@@ -423,9 +448,9 @@ export default function(subject: Subject) {
     });
 
     test('sort (asc)', async function(assert: Assert) {
-      await createTags(subject.fastify);
+      await createTags(subject.fastify as FastifyInstance);
 
-      const response = await request(subject.fastify, {
+      const response = await request(subject.fastify as FastifyInstance, {
         method: 'POST',
         url: `/graphql`,
         payload: {
@@ -450,9 +475,9 @@ export default function(subject: Subject) {
     });
 
     test('sort (desc)', async function(assert: Assert) {
-      await createTags(subject.fastify);
+      await createTags(subject.fastify as FastifyInstance);
 
-      const response = await request(subject.fastify, {
+      const response = await request(subject.fastify as FastifyInstance, {
         method: 'POST',
         url: `/graphql`,
         payload: {

@@ -11,7 +11,7 @@ import SQLSource from '../src/sql';
 
 let fastify: FastifyInstance;
 let source: SQLSource;
-let subject: Subject = { fastify: Fastify() };
+let subject: Subject = {};
 
 module('Orbit Fastify Plugin (sql)', function(hooks: Hooks) {
   // @ts-ignore
@@ -40,5 +40,5 @@ module('Orbit Fastify Plugin (sql)', function(hooks: Hooks) {
     await fastify.close();
   });
 
-  tests(subject);
+  tests(subject, 'sql');
 });

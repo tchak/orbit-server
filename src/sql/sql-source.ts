@@ -10,7 +10,8 @@ import Orbit, {
   TransformOrOperations,
   RecordOperation,
   updatable,
-  Updatable
+  Updatable,
+  Schema
 } from '@orbit/data';
 import Knex from 'knex';
 
@@ -61,9 +62,9 @@ export default class SQLSource extends Source
     super(settings);
 
     let cacheSettings: SQLCacheSettings = {
-      knex: settings.knex as Knex.Config
+      knex: settings.knex as Knex.Config,
+      schema: settings.schema as Schema
     };
-    cacheSettings.schema = settings.schema;
     cacheSettings.keyMap = settings.keyMap;
     cacheSettings.queryBuilder =
       cacheSettings.queryBuilder || this.queryBuilder;
@@ -78,7 +79,8 @@ export default class SQLSource extends Source
     return this._cache;
   }
 
-  disconnect() {
+  async deactivate() {
+    await super.deactivate();
     return this.cache.closeDB();
   }
 

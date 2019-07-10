@@ -8,17 +8,13 @@ import schema from './support/test-schema';
 import { Plugin } from '../src';
 
 let fastify: FastifyInstance;
-let source: DisposableMemorySource;
-
-class DisposableMemorySource extends MemorySource {
-  async disconnect() {}
-}
+let source: MemorySource;
 
 module('Orbit Fastify Plugin schema', function(hooks: Hooks) {
   // @ts-ignore
   hooks.beforeEach(() => {
     fastify = Fastify();
-    source = new DisposableMemorySource({ schema });
+    source = new MemorySource({ schema });
     fastify.register(Plugin, {
       source
     });
