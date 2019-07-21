@@ -101,11 +101,14 @@ export default class SQLSource extends Source
   /////////////////////////////////////////////////////////////////////////////
 
   async _update(transform: Transform): Promise<any> {
-    const result = await this.cache.patch(
-      transform.operations as RecordOperation[]
-    );
-    const results = result.data;
-    return results.length === 1 ? results[0] : results;
+    if (!this.transformLog.contains(transform.id)) {
+      const result = await this.cache.patch(
+        transform.operations as RecordOperation[]
+      );
+      await this.transformed([transform]);
+      const results = result.data;
+      return transform.operations.length === 1 ? results[0] : results;
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
