@@ -8,9 +8,10 @@ import {
   Schema,
   SortQBParam,
   FilterQBParam,
-  QueryBuilder,
   ClientError,
-  ServerError
+  ServerError,
+  FindRecordsTerm,
+  FindRelatedRecordsTerm
 } from '@orbit/data';
 import {
   ResourceDocument,
@@ -337,7 +338,7 @@ export class JSONAPIServer {
     const { source } = context;
 
     const records: OrbitRecord[] = await source.query(
-      q => this.buildFindRecordsQuery(q, type, filter, sort),
+      q => this.queryBuilderParams(q.findRecords(type), type, filter, sort),
       {
         [source.name]: this.sourceOptions(headers, include)
       }
@@ -346,14 +347,20 @@ export class JSONAPIServer {
   }
 
   protected async handleFindRelatedRecords({
-    params: { type, id, relationship, include },
+    params: { type, id, relationship, include, filter, sort },
     headers,
     context
   }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse> {
     const { source } = context;
 
     const records: OrbitRecord[] = await source.query(
-      q => q.findRelatedRecords({ type, id }, relationship),
+      q =>
+        this.queryBuilderParams(
+          q.findRelatedRecords({ type, id }, relationship),
+          type,
+          filter,
+          sort
+        ),
       {
         [source.name]: this.sourceOptions(headers, include)
       }
@@ -502,13 +509,12 @@ export class JSONAPIServer {
     };
   }
 
-  protected buildFindRecordsQuery(
-    q: QueryBuilder,
+  protected queryBuilderParams(
+    term: FindRecordsTerm | FindRelatedRecordsTerm,
     type: string,
     filter?: Record<string, string>,
     sort?: string
   ) {
-    let term = q.findRecords(type);
     if (filter) {
       term = term.filter(...this.filterQBParams(type, filter));
     }
