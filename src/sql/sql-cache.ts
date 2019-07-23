@@ -1,17 +1,8 @@
-import {
-  QueryOrExpression,
-  Record as OrbitRecord,
-  RecordIdentity,
-  RecordOperation,
-  TransformBuilderFunc,
-  Schema
-} from '@orbit/data';
+import { Record as OrbitRecord, RecordIdentity, Schema } from '@orbit/data';
 import {
   RecordRelationshipIdentity,
   AsyncRecordCache,
-  AsyncRecordCacheSettings,
-  PatchResult,
-  QueryResultData
+  AsyncRecordCacheSettings
 } from '@orbit/record-cache';
 import Knex from 'knex';
 import { underscore, foreignKey, tableize } from 'inflected';
@@ -36,25 +27,6 @@ export default class SQLCache extends AsyncRecordCache {
 
     this._config = settings.knex;
     this._config.postProcessResponse = postProcessResponse;
-  }
-
-  async query(
-    queryOrExpression: QueryOrExpression,
-    options?: object,
-    id?: string
-  ): Promise<QueryResultData> {
-    await this.openDB();
-    return super.query(queryOrExpression, options, id);
-  }
-
-  async patch(
-    operationOrOperations:
-      | RecordOperation
-      | RecordOperation[]
-      | TransformBuilderFunc
-  ): Promise<PatchResult> {
-    await this.openDB();
-    return super.patch(operationOrOperations);
   }
 
   get config(): Knex.Config {

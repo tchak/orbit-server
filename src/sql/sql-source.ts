@@ -58,6 +58,7 @@ export default class SQLSource extends Source
     );
 
     settings.name = settings.name || 'sql';
+    settings.autoActivate = false;
 
     super(settings);
 
@@ -73,10 +74,16 @@ export default class SQLSource extends Source
     cacheSettings.knex = cacheSettings.knex || settings.knex;
 
     this._cache = new SQLCache(cacheSettings);
+    this.activate();
   }
 
   get cache(): SQLCache {
     return this._cache;
+  }
+
+  async _activate() {
+    await super._activate();
+    await this.cache.openDB();
   }
 
   async deactivate() {
