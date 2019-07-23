@@ -32,7 +32,7 @@ export interface ServerSettings {
 }
 
 export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
-  function(fastify: FastifyInstance, settings, next) {
+  async function(fastify: FastifyInstance, settings, next) {
     fastify.register(favicon);
 
     if (typeof settings.helmet === 'object') {
@@ -47,6 +47,8 @@ export default plugin<Server, IncomingMessage, OutgoingMessage, ServerSettings>(
 
     const { source, pubsub } = settings;
     const context = { source, pubsub };
+
+    await source.activated;
 
     fastify.register(fastifySchema, {
       context,
