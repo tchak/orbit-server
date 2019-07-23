@@ -116,6 +116,11 @@ export default function(subject: Subject, sourceName: string) {
       );
 
       assert.equal(status, 404);
+
+      const { status: newStatus } = await createEarth(
+        subject.fastify as FastifyInstance
+      );
+      assert.equal(newStatus, 201);
     });
 
     test('create moon', async function(assert: Assert) {

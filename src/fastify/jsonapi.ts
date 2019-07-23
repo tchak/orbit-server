@@ -50,6 +50,7 @@ class JSONAPIFastifyServer extends JSONAPIServer {
       });
 
       fastify.setErrorHandler(async (error, _, reply) => {
+        await context.source.requestQueue.clear().catch(() => {});
         const [status, body] = this.handleError(error);
         reply.status(status);
         return body;
