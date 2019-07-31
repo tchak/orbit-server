@@ -1,5 +1,8 @@
 import { toArray } from '@orbit/utils';
 import {
+  Source,
+  Queryable,
+  Updatable,
   RecordNotFoundException,
   SchemaError,
   RecordException,
@@ -16,11 +19,18 @@ import {
 import {
   ResourceDocument,
   JSONAPISerializer,
-  JSONAPISerializerSettings,
   ResourceOperationsDocument
 } from '@orbit/jsonapi';
 
-import Context from '../context';
+export interface QueryableAndUpdatableSource
+  extends Source,
+    Queryable,
+    Updatable {}
+
+export interface Context {
+  source: QueryableAndUpdatableSource;
+  serializer: JSONAPISerializer;
+}
 
 export interface ResourceOperationsResponseDocument {
   operations: ResourceDocument[];
@@ -33,7 +43,7 @@ interface ResourceError {
   code: HTTPStatus;
 }
 
-interface ErrorsDocument {
+export interface ErrorsDocument {
   errors: ResourceError[];
 }
 
@@ -95,468 +105,468 @@ export type JSONAPIResponse<Body = ResourceDocument> = [
   Body
 ];
 
-export type Handler = (request: JSONAPIRequest) => Promise<JSONAPIResponse>;
+export type Handler = (
+  request: JSONAPIRequest | JSONAPIOperationsRequest
+) => Promise<
+  JSONAPIResponse<ResourceDocument | ResourceOperationsResponseDocument | null>
+>;
 
-export interface RouteDefinition {
+export interface RouteHandler {
   method: HTTPMethods;
   url: string;
   params: { type: string; relationship?: string };
   handler: Handler;
 }
 
-export interface JSONAPIServerSettings {
+export interface RouteHandlersArgs {
   schema: Schema;
-  readonly?: boolean;
-  SerializerClass?: new (
-    settings: JSONAPISerializerSettings
-  ) => JSONAPISerializer;
+  serializer: JSONAPISerializer;
+  readonly: boolean;
 }
 
-export class JSONAPIServer {
-  readonly schema: Schema;
-  readonly readonly: boolean;
-  protected readonly serializer: JSONAPISerializer;
-
-  constructor(settings: JSONAPIServerSettings) {
-    this.schema = settings.schema;
-
-    const SerializerClass = settings.SerializerClass || JSONAPISerializer;
-    this.serializer = new SerializerClass({
-      schema: settings.schema
-    });
-    this.readonly = settings.readonly === true;
+export function routeHandlers(
+  args: RouteHandlersArgs,
+  callback: (prefix: string, routes: RouteHandler[]) => void
+): void {
+  for (let type in args.schema.models) {
+    const prefix = args.serializer.resourceType(type);
+    callback(prefix, resourceRoutes(args, type));
   }
 
-  eachRoute(callback: (prefix: string, route: RouteDefinition[]) => void) {
-    for (let type in this.schema.models) {
-      callback(this.serializer.resourceType(type), this.resourceRoutes(type));
-    }
-
-    if (!this.readonly) {
-      callback('operations', [
-        {
-          method: HTTPMethods.Patch,
-          url: '/',
-          params: { type: 'operations' },
-          handler: this.handleOperations.bind(this)
-        }
-      ]);
-    }
-  }
-
-  handleError(error: Error): [number, ErrorsDocument] {
-    const id = this.schema.generateId();
-    const title = error.message;
-    let detail = '';
-    let code = HTTPStatus.InternalServerError;
-
-    if (error instanceof RecordNotFoundException) {
-      detail = error.description;
-      code = HTTPStatus.NotFound;
-    } else if (error instanceof ClientError || error instanceof ServerError) {
-      detail = error.description;
-      code = (error as any).response.status;
-    } else if (
-      error instanceof SchemaError ||
-      error instanceof RecordException
-    ) {
-      detail = error.description;
-      code = HTTPStatus.BadRequest;
-    }
-
-    return [code, { errors: [{ id, title, detail, code }] }];
-  }
-
-  protected resourceRoutes(type: string): RouteDefinition[] {
-    const routes: RouteDefinition[] = [
+  if (!args.readonly) {
+    callback('/operations', [
       {
-        method: HTTPMethods.Get,
+        method: HTTPMethods.Patch,
         url: '/',
-        params: { type },
-        handler: this.handleFindRecords.bind(this)
-      },
+        params: { type: 'operations' },
+        handler: handleOperations
+      }
+    ]);
+  }
+}
+
+export async function errorHandler(
+  source: Source,
+  error: Error
+): Promise<[number, ErrorsDocument]> {
+  await source.requestQueue.clear().catch(() => {});
+
+  const id = source.schema.generateId();
+  const title = error.message;
+  let detail = '';
+  let code = HTTPStatus.InternalServerError;
+
+  if (error instanceof RecordNotFoundException) {
+    detail = error.description;
+    code = HTTPStatus.NotFound;
+  } else if (error instanceof ClientError || error instanceof ServerError) {
+    detail = error.description;
+    code = (error as any).response.status;
+  } else if (error instanceof SchemaError || error instanceof RecordException) {
+    detail = error.description;
+    code = HTTPStatus.BadRequest;
+  }
+
+  return [code, { errors: [{ id, title, detail, code }] }];
+}
+
+function resourceRoutes(args: RouteHandlersArgs, type: string): RouteHandler[] {
+  const routes: RouteHandler[] = [
+    {
+      method: HTTPMethods.Get,
+      url: '/',
+      params: { type },
+      handler: handleFindRecords
+    },
+    {
+      method: HTTPMethods.Get,
+      url: `/:id`,
+      params: { type },
+      handler: handleFindRecord
+    }
+  ];
+
+  if (!args.readonly) {
+    routes.push(
       {
-        method: HTTPMethods.Get,
+        method: HTTPMethods.Patch,
         url: `/:id`,
         params: { type },
-        handler: this.handleFindRecord.bind(this)
+        handler: handleUpdateRecord
+      },
+      {
+        method: HTTPMethods.Delete,
+        url: `/:id`,
+        params: { type },
+        handler: handleRemoveRecord
+      },
+      {
+        method: HTTPMethods.Post,
+        url: '/',
+        params: { type },
+        handler: handleAddRecord
       }
-    ];
+    );
+  }
 
-    if (!this.readonly) {
-      routes.push(
-        {
-          method: HTTPMethods.Patch,
-          url: `/:id`,
-          params: { type },
-          handler: this.handleUpdateRecord.bind(this)
-        },
-        {
-          method: HTTPMethods.Delete,
-          url: `/:id`,
-          params: { type },
-          handler: this.handleRemoveRecord.bind(this)
-        },
-        {
-          method: HTTPMethods.Post,
-          url: '/',
-          params: { type },
-          handler: this.handleAddRecord.bind(this)
-        }
-      );
-    }
+  args.schema.eachRelationship(type, (property, { type: kind }) => {
+    const url = `/:id/relationships/${args.serializer.resourceRelationship(
+      type,
+      property
+    )}`;
 
-    this.schema.eachRelationship(type, (property, { type: kind }) => {
-      const url = `/:id/relationships/${this.serializer.resourceRelationship(
-        type,
-        property
-      )}`;
-
-      if (kind === 'hasMany') {
-        routes.push({
-          method: HTTPMethods.Get,
-          url: `/:id/${property}`,
-          params: { type, relationship: property },
-          handler: this.handleFindRelatedRecords.bind(this)
-        });
-        if (!this.readonly) {
-          routes.push(
-            {
-              method: HTTPMethods.Post,
-              url,
-              params: { type, relationship: property },
-              handler: this.handleAddToRelatedRecords.bind(this)
-            },
-            {
-              method: HTTPMethods.Delete,
-              url,
-              params: { type, relationship: property },
-              handler: this.handleRemoveFromRelatedRecords.bind(this)
-            },
-            {
-              method: HTTPMethods.Patch,
-              url,
-              params: { type, relationship: property },
-              handler: this.handleReplaceRelatedRecords.bind(this)
-            }
-          );
-        }
-      } else {
-        routes.push({
-          method: HTTPMethods.Get,
-          url: `/:id/${property}`,
-          params: { type, relationship: property },
-          handler: this.handleFindRelatedRecord.bind(this)
-        });
-        if (!this.readonly) {
-          routes.push({
+    if (kind === 'hasMany') {
+      routes.push({
+        method: HTTPMethods.Get,
+        url: `/:id/${property}`,
+        params: { type, relationship: property },
+        handler: handleFindRelatedRecords
+      });
+      if (!args.readonly) {
+        routes.push(
+          {
+            method: HTTPMethods.Post,
+            url,
+            params: { type, relationship: property },
+            handler: handleAddToRelatedRecords
+          },
+          {
+            method: HTTPMethods.Delete,
+            url,
+            params: { type, relationship: property },
+            handler: handleRemoveFromRelatedRecords
+          },
+          {
             method: HTTPMethods.Patch,
             url,
             params: { type, relationship: property },
-            handler: this.handleReplaceRelatedRecord.bind(this)
-          });
-        }
+            handler: handleReplaceRelatedRecords
+          }
+        );
       }
-    });
-
-    return routes;
-  }
-
-  protected async handleUpdateRecord({
-    body,
-    headers,
-    context
-  }: JSONAPIRequest<ResourceParams>): Promise<JSONAPIResponse<null>> {
-    const { source } = context;
-    const { data } = this.serializer.deserialize(body);
-
-    await source.update(q => q.updateRecord(data as OrbitRecord), {
-      [source.name]: this.sourceOptions(headers)
-    });
-    return [HTTPStatus.NoContent, {}, null];
-  }
-
-  protected async handleRemoveRecord({
-    params: { type, id },
-    headers,
-    context
-  }: JSONAPIRequest<ResourceParams>): Promise<JSONAPIResponse<null>> {
-    const { source } = context;
-
-    await source.update(q => q.removeRecord({ id, type }), {
-      [source.name]: this.sourceOptions(headers)
-    });
-    return [HTTPStatus.NoContent, {}, null];
-  }
-
-  protected async handleFindRecord({
-    params: { type, id, include },
-    headers,
-    context
-  }: JSONAPIRequest<ResourceParams>): Promise<JSONAPIResponse> {
-    const { source } = context;
-
-    const record: OrbitRecord = await source.query(
-      q => q.findRecord({ type, id }),
-      {
-        [source.name]: this.sourceOptions(headers, include)
-      }
-    );
-    return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: record })];
-  }
-
-  protected async handleAddRecord({
-    url,
-    body,
-    params: { include },
-    headers,
-    context
-  }: JSONAPIRequest): Promise<JSONAPIResponse> {
-    const { source } = context;
-    const { data } = this.serializer.deserialize(body);
-
-    const record: OrbitRecord = await source.update(
-      q => q.addRecord(data as OrbitRecord),
-      {
-        [source.name]: this.sourceOptions(headers, include)
-      }
-    );
-    return [
-      HTTPStatus.Created,
-      {
-        location: `${url}/${record.id}`
-      },
-      this.serializer.serialize({ data: record })
-    ];
-  }
-
-  protected async handleFindRecords({
-    params: { type, include, filter, sort },
-    headers,
-    context
-  }: JSONAPIRequest): Promise<JSONAPIResponse> {
-    const { source } = context;
-
-    const records: OrbitRecord[] = await source.query(
-      q => this.queryBuilderParams(q.findRecords(type), type, filter, sort),
-      {
-        [source.name]: this.sourceOptions(headers, include)
-      }
-    );
-    return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: records })];
-  }
-
-  protected async handleFindRelatedRecords({
-    params: { type, id, relationship, include, filter, sort },
-    headers,
-    context
-  }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse> {
-    const { source } = context;
-
-    const records: OrbitRecord[] = await source.query(
-      q =>
-        this.queryBuilderParams(
-          q.findRelatedRecords({ type, id }, relationship),
-          type,
-          filter,
-          sort
-        ),
-      {
-        [source.name]: this.sourceOptions(headers, include)
-      }
-    );
-    return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: records })];
-  }
-
-  protected async handleFindRelatedRecord({
-    params: { type, id, relationship, include },
-    headers,
-    context
-  }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse> {
-    const { source } = context;
-
-    const record: OrbitRecord = await source.query(
-      q => q.findRelatedRecord({ type, id }, relationship),
-      {
-        [source.name]: this.sourceOptions(headers, include)
-      }
-    );
-    return [HTTPStatus.Ok, {}, this.serializer.serialize({ data: record })];
-  }
-
-  protected async handleAddToRelatedRecords({
-    params: { type, id, relationship },
-    body,
-    headers,
-    context
-  }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
-    const { source } = context;
-    const { data } = this.serializer.deserialize(body);
-
-    for (let identity of data as RecordIdentity[]) {
-      await source.update(
-        q => q.addToRelatedRecords({ id, type }, relationship, identity),
-        {
-          [source.name]: this.sourceOptions(headers)
-        }
-      );
-    }
-    return [HTTPStatus.NoContent, {}, null];
-  }
-
-  protected async handleRemoveFromRelatedRecords({
-    params: { type, id, relationship },
-    body,
-    headers,
-    context
-  }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
-    const { source } = context;
-    const { data } = this.serializer.deserialize(body);
-
-    for (let identity of data as RecordIdentity[]) {
-      await source.update(
-        q => q.removeFromRelatedRecords({ id, type }, relationship, identity),
-        {
-          [source.name]: this.sourceOptions(headers)
-        }
-      );
-    }
-    return [HTTPStatus.NoContent, {}, null];
-  }
-
-  protected async handleReplaceRelatedRecords({
-    params: { type, id, relationship },
-    body,
-    headers,
-    context
-  }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
-    const { source } = context;
-    const { data } = this.serializer.deserialize(body);
-
-    await source.update(
-      q =>
-        q.replaceRelatedRecords(
-          { id, type },
-          relationship as string,
-          data as RecordIdentity[]
-        ),
-      {
-        [source.name]: this.sourceOptions(headers)
-      }
-    );
-    return [HTTPStatus.NoContent, {}, null];
-  }
-
-  protected async handleReplaceRelatedRecord({
-    params: { type, id, relationship },
-    body,
-    headers,
-    context
-  }: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
-    const { source } = context;
-    const { data } = this.serializer.deserialize(body);
-
-    await source.update(
-      q =>
-        q.replaceRelatedRecord(
-          { id, type },
-          relationship as string,
-          data as RecordIdentity
-        ),
-      {
-        [source.name]: this.sourceOptions(headers)
-      }
-    );
-    return [HTTPStatus.NoContent, {}, null];
-  }
-
-  protected async handleOperations({
-    body,
-    headers,
-    context
-  }: JSONAPIOperationsRequest): Promise<
-    JSONAPIResponse<ResourceOperationsResponseDocument>
-  > {
-    const { source } = context;
-    const operations = this.serializer.deserializeOperationsDocument(body);
-
-    for (let operation of operations) {
-      if (operation.op === 'addRecord') {
-        source.schema.initializeRecord(operation.record);
-      }
-    }
-
-    const records: OrbitRecord[] = toArray(
-      await source.update(operations, {
-        [source.name]: this.sourceOptions(headers)
-      })
-    );
-    return [
-      HTTPStatus.Ok,
-      {},
-      {
-        operations: records.map(data => this.serializer.serialize({ data }))
-      }
-    ];
-  }
-
-  protected sourceOptions(headers: Headers, include?: string) {
-    return {
-      include,
-      settings: {
-        headers
-      }
-    };
-  }
-
-  protected queryBuilderParams(
-    term: FindRecordsTerm | FindRelatedRecordsTerm,
-    type: string,
-    filter?: Record<string, string>,
-    sort?: string
-  ) {
-    if (filter) {
-      term = term.filter(...this.filterQBParams(type, filter));
-    }
-    if (sort) {
-      term = term.sort(...this.sortQBParams(type, sort));
-    }
-    return term;
-  }
-
-  protected filterQBParams(
-    type: string,
-    filter: Record<string, string>
-  ): FilterQBParam[] {
-    const params: FilterQBParam[] = [];
-    for (let property in filter) {
-      let attribute = this.serializer.recordAttribute(type, property);
-      if (this.schema.hasAttribute(type, attribute)) {
-        params.push({
-          op: 'equal',
-          attribute,
-          value: filter[property]
+    } else {
+      routes.push({
+        method: HTTPMethods.Get,
+        url: `/:id/${property}`,
+        params: { type, relationship: property },
+        handler: handleFindRelatedRecord
+      });
+      if (!args.readonly) {
+        routes.push({
+          method: HTTPMethods.Patch,
+          url,
+          params: { type, relationship: property },
+          handler: handleReplaceRelatedRecord
         });
       }
     }
-    return params;
-  }
+  });
 
-  protected sortQBParams(type: string, sort: string): SortQBParam[] {
-    const params: SortQBParam[] = [];
-    for (let property of sort.split(',')) {
-      let desc = property.startsWith('-');
-      let attribute = this.serializer.recordAttribute(
+  return routes;
+}
+
+export async function handleUpdateRecord({
+  body,
+  headers,
+  context
+}: JSONAPIRequest<ResourceParams>): Promise<JSONAPIResponse<null>> {
+  const { source, serializer } = context;
+  const { data } = serializer.deserialize(body);
+
+  await source.update(q => q.updateRecord(data as OrbitRecord), {
+    [source.name]: sourceOptions(headers)
+  });
+  return [HTTPStatus.NoContent, {}, null];
+}
+
+export async function handleRemoveRecord({
+  params: { type, id },
+  headers,
+  context
+}: JSONAPIRequest<ResourceParams>): Promise<JSONAPIResponse<null>> {
+  const { source } = context;
+
+  await source.update(q => q.removeRecord({ id, type }), {
+    [source.name]: sourceOptions(headers)
+  });
+  return [HTTPStatus.NoContent, {}, null];
+}
+
+export async function handleFindRecord({
+  params: { type, id, include },
+  headers,
+  context
+}: JSONAPIRequest<ResourceParams>): Promise<JSONAPIResponse> {
+  const { source, serializer } = context;
+
+  const record: OrbitRecord = await source.query(
+    q => q.findRecord({ type, id }),
+    {
+      [source.name]: sourceOptions(headers, include)
+    }
+  );
+  return [HTTPStatus.Ok, {}, serializer.serialize({ data: record })];
+}
+
+export async function handleAddRecord({
+  url,
+  params: { include },
+  body,
+  headers,
+  context
+}: JSONAPIRequest): Promise<JSONAPIResponse> {
+  const { source, serializer } = context;
+  const { data } = serializer.deserialize(body);
+
+  const record: OrbitRecord = await source.update(
+    q => q.addRecord(data as OrbitRecord),
+    {
+      [source.name]: sourceOptions(headers, include)
+    }
+  );
+  return [
+    HTTPStatus.Created,
+    {
+      location: `${url}/${record.id}`
+    },
+    serializer.serialize({ data: record })
+  ];
+}
+
+export async function handleFindRecords({
+  params: { type, include, filter, sort },
+  headers,
+  context
+}: JSONAPIRequest): Promise<JSONAPIResponse> {
+  const { source, serializer } = context;
+
+  const records: OrbitRecord[] = await source.query(
+    q =>
+      queryBuilderParams(serializer, q.findRecords(type), type, filter, sort),
+    {
+      [source.name]: sourceOptions(headers, include)
+    }
+  );
+  return [HTTPStatus.Ok, {}, serializer.serialize({ data: records })];
+}
+
+export async function handleFindRelatedRecords({
+  params: { type, id, relationship, include, filter, sort },
+  headers,
+  context
+}: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse> {
+  const { source, serializer } = context;
+
+  const records: OrbitRecord[] = await source.query(
+    q =>
+      queryBuilderParams(
+        serializer,
+        q.findRelatedRecords({ type, id }, relationship),
         type,
-        desc ? property.substring(1) : property
-      );
-      if (this.schema.hasAttribute(type, attribute)) {
-        params.push({
-          attribute,
-          order: desc ? 'descending' : 'ascending'
-        });
-      }
+        filter,
+        sort
+      ),
+    {
+      [source.name]: sourceOptions(headers, include)
     }
-    return params;
+  );
+  return [HTTPStatus.Ok, {}, serializer.serialize({ data: records })];
+}
+
+export async function handleFindRelatedRecord({
+  params: { type, id, relationship, include },
+  headers,
+  context
+}: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse> {
+  const { source, serializer } = context;
+
+  const record: OrbitRecord = await source.query(
+    q => q.findRelatedRecord({ type, id }, relationship),
+    {
+      [source.name]: sourceOptions(headers, include)
+    }
+  );
+  return [HTTPStatus.Ok, {}, serializer.serialize({ data: record })];
+}
+
+export async function handleAddToRelatedRecords({
+  params: { type, id, relationship },
+  body,
+  headers,
+  context
+}: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
+  const { source, serializer } = context;
+  const { data } = serializer.deserialize(body);
+
+  for (let identity of data as RecordIdentity[]) {
+    await source.update(
+      q => q.addToRelatedRecords({ id, type }, relationship, identity),
+      {
+        [source.name]: sourceOptions(headers)
+      }
+    );
   }
+  return [HTTPStatus.NoContent, {}, null];
+}
+
+export async function handleRemoveFromRelatedRecords({
+  params: { type, id, relationship },
+  body,
+  headers,
+  context
+}: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
+  const { source, serializer } = context;
+  const { data } = serializer.deserialize(body);
+
+  for (let identity of data as RecordIdentity[]) {
+    await source.update(
+      q => q.removeFromRelatedRecords({ id, type }, relationship, identity),
+      {
+        [source.name]: sourceOptions(headers)
+      }
+    );
+  }
+  return [HTTPStatus.NoContent, {}, null];
+}
+
+export async function handleReplaceRelatedRecords({
+  params: { type, id, relationship },
+  body,
+  headers,
+  context
+}: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
+  const { source, serializer } = context;
+  const { data } = serializer.deserialize(body);
+
+  await source.update(
+    q =>
+      q.replaceRelatedRecords(
+        { id, type },
+        relationship as string,
+        data as RecordIdentity[]
+      ),
+    {
+      [source.name]: sourceOptions(headers)
+    }
+  );
+  return [HTTPStatus.NoContent, {}, null];
+}
+
+export async function handleReplaceRelatedRecord({
+  params: { type, id, relationship },
+  body,
+  headers,
+  context
+}: JSONAPIRequest<RelationshipParams>): Promise<JSONAPIResponse<null>> {
+  const { source, serializer } = context;
+  const { data } = serializer.deserialize(body);
+
+  await source.update(
+    q =>
+      q.replaceRelatedRecord(
+        { id, type },
+        relationship as string,
+        data as RecordIdentity
+      ),
+    {
+      [source.name]: sourceOptions(headers)
+    }
+  );
+  return [HTTPStatus.NoContent, {}, null];
+}
+
+export async function handleOperations({
+  body,
+  headers,
+  context
+}: JSONAPIOperationsRequest): Promise<
+  JSONAPIResponse<ResourceOperationsResponseDocument>
+> {
+  const { source, serializer } = context;
+  const operations = serializer.deserializeOperationsDocument(body);
+
+  for (let operation of operations) {
+    if (operation.op === 'addRecord') {
+      source.schema.initializeRecord(operation.record);
+    }
+  }
+
+  const records: OrbitRecord[] = toArray(
+    await source.update(operations, {
+      [source.name]: sourceOptions(headers)
+    })
+  );
+  return [
+    HTTPStatus.Ok,
+    {},
+    {
+      operations: records.map(data => serializer.serialize({ data }))
+    }
+  ];
+}
+
+function sourceOptions(headers: Headers, include?: string) {
+  return {
+    include,
+    settings: {
+      headers
+    }
+  };
+}
+
+function queryBuilderParams(
+  serializer: JSONAPISerializer,
+  term: FindRecordsTerm | FindRelatedRecordsTerm,
+  type: string,
+  filter?: Record<string, string>,
+  sort?: string
+) {
+  if (filter) {
+    term = term.filter(...filterQBParams(serializer, type, filter));
+  }
+  if (sort) {
+    term = term.sort(...sortQBParams(serializer, type, sort));
+  }
+  return term;
+}
+
+function filterQBParams(
+  serializer: JSONAPISerializer,
+  type: string,
+  filter: Record<string, string>
+): FilterQBParam[] {
+  const params: FilterQBParam[] = [];
+  for (let property in filter) {
+    let attribute = serializer.recordAttribute(type, property);
+    if (serializer.schema.hasAttribute(type, attribute)) {
+      params.push({
+        op: 'equal',
+        attribute,
+        value: filter[property]
+      });
+    }
+  }
+  return params;
+}
+
+function sortQBParams(
+  serializer: JSONAPISerializer,
+  type: string,
+  sort: string
+): SortQBParam[] {
+  const params: SortQBParam[] = [];
+  for (let property of sort.split(',')) {
+    let desc = property.startsWith('-');
+    let attribute = serializer.recordAttribute(
+      type,
+      desc ? property.substring(1) : property
+    );
+    if (serializer.schema.hasAttribute(type, attribute)) {
+      params.push({
+        attribute,
+        order: desc ? 'descending' : 'ascending'
+      });
+    }
+  }
+  return params;
 }

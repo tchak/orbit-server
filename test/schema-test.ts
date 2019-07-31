@@ -1,31 +1,28 @@
-// @ts-ignore
-import { module, test } from 'qunit';
-
 import Fastify, { FastifyInstance, HTTPInjectOptions } from 'fastify';
 import MemorySource from '@orbit/memory';
 
 import schema from './support/test-schema';
-import { Plugin } from '../src';
+import Server from '../src';
 
 let fastify: FastifyInstance;
 let source: MemorySource;
 
-module('Orbit Fastify Plugin schema', function(hooks: Hooks) {
-  // @ts-ignore
+QUnit.module('Orbit Fastify Plugin schema', function(hooks) {
   hooks.beforeEach(() => {
     fastify = Fastify();
     source = new MemorySource({ schema });
-    fastify.register(Plugin, {
-      source
-    });
+    fastify.register(
+      new Server({
+        source
+      }).createHandler()
+    );
   });
 
-  // @ts-ignore
   hooks.afterEach(async () => {
     await fastify.close();
   });
 
-  test('get', async function(assert: Assert) {
+  QUnit.test('get', async function(assert) {
     const response = await request(fastify, {
       url: '/schema'
     });

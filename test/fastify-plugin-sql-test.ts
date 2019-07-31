@@ -1,20 +1,16 @@
-// @ts-ignore
-import { module } from 'qunit';
-
 import Fastify, { FastifyInstance } from 'fastify';
 import { PubSub } from 'graphql-subscriptions';
 
 import schema from './support/test-schema';
 import tests, { Subject } from './support/fastify-plugin-shared';
-import { Plugin } from '../src';
+import Server from '../src';
 import SQLSource from '../src/sql';
 
 let fastify: FastifyInstance;
 let source: SQLSource;
 let subject: Subject = {};
 
-module('Orbit Fastify Plugin (sql)', function(hooks: Hooks) {
-  // @ts-ignore
+QUnit.module('Orbit Fastify Plugin (sql)', function(hooks) {
   hooks.beforeEach(() => {
     fastify = Fastify();
     source = new SQLSource({
@@ -25,12 +21,14 @@ module('Orbit Fastify Plugin (sql)', function(hooks: Hooks) {
         useNullAsDefault: true
       }
     });
-    fastify.register(Plugin, {
-      source,
-      pubsub: new PubSub(),
-      jsonapi: true,
-      graphql: true
-    });
+    fastify.register(
+      new Server({
+        source,
+        pubsub: new PubSub(),
+        jsonapi: true,
+        graphql: true
+      }).createHandler()
+    );
 
     subject.fastify = fastify;
   });

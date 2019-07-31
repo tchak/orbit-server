@@ -1,4 +1,6 @@
 import {
+  Source,
+  Queryable,
   Schema,
   RecordIdentity,
   Record as OrbitRecord,
@@ -30,7 +32,12 @@ import { GraphQLDate, GraphQLDateTime } from 'graphql-iso-date';
 import { deepGet, camelize, capitalize } from '@orbit/utils';
 import DataLoader from 'dataloader';
 
-import Context from '../context';
+export interface QueryableSource extends Source, Queryable {}
+
+export interface Context {
+  source: QueryableSource;
+  headers?: Record<string, string>;
+}
 
 interface Params {}
 
