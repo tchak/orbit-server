@@ -105,7 +105,7 @@ export default class OrbitServer {
 
       function listener(transform: Transform) {
         for (let operation of transform.operations as RecordOperation[]) {
-          pubsub.publish(operation.record.type, operation);
+          pubsub.publish(`operation:${operation.record.type}`, operation);
         }
       }
 
