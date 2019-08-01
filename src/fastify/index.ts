@@ -6,43 +6,25 @@ import favicon from 'fastify-favicon';
 
 import { IncomingMessage, OutgoingMessage, Server } from 'http';
 import qs from 'qs';
-import { JSONAPISerializerSettings, JSONAPISerializer } from '@orbit/jsonapi';
-import { ApolloServer, Config as GraphQLConfig } from 'apollo-server-fastify';
+import { JSONAPISerializer } from '@orbit/jsonapi';
+import { ApolloServer } from 'apollo-server-fastify';
 
-import BaseServer, {
+import BaseOrbitServer, {
+  JSONAPIConfig,
+  GraphQLConfig,
   ServerSettings,
-  GraphQLContext,
   JSONAPIContext,
-  RouteHandler
+  RouteDefinition
 } from '../server';
 
-export interface JSONAPIConfig {
-  readonly?: boolean;
-  SerializerClass?: new (
-    settings: JSONAPISerializerSettings
-  ) => JSONAPISerializer;
-}
-
-export interface FastifyServerSettings extends ServerSettings {
-  jsonapi?: boolean | JSONAPIConfig;
-  graphql?: boolean | GraphQLConfig;
-}
+export { ServerSettings };
 
 export interface ServerRegistration {
   cors?: boolean;
   helmet?: boolean | helmet.FastifyHelmetOptions;
 }
 
-export default class FastifyServer extends BaseServer {
-  protected jsonapi?: boolean | JSONAPIConfig;
-  protected graphql?: boolean | GraphQLConfig;
-
-  constructor(settings: FastifyServerSettings) {
-    super(settings);
-    this.jsonapi = settings.jsonapi;
-    this.graphql = settings.graphql;
-  }
-
+export default class OrbitServer extends BaseOrbitServer {
   createHandler(settings: ServerRegistration = {}) {
     return plugin(async (fastify, _, next) => {
       fastify.register(favicon);
@@ -57,24 +39,26 @@ export default class FastifyServer extends BaseServer {
         fastify.register(cors);
       }
 
-      await this.source.activated;
+      await this.setupSource(fastify);
 
-      this.registerSchema(fastify);
+      if (this.schema !== false) {
+        this.registerSchema(fastify);
+      }
       if (this.jsonapi) {
         this.registerJSONAPI(fastify);
       }
       if (this.graphql) {
         this.registerGraphQL(fastify);
       }
-      this.registerPubSub(fastify);
 
       next();
     });
   }
 
   private registerSchema(fastify: FastifyInstance) {
-    const schema = this.generateSchema();
-    fastify.get('/schema', async () => schema);
+    const path = typeof this.schema === 'string' ? this.schema : 'schema';
+    const schema = this.makeOrbitSchema();
+    fastify.get(`/${path}`, async () => schema);
   }
 
   private registerJSONAPI(fastify: FastifyInstance) {
@@ -89,28 +73,32 @@ export default class FastifyServer extends BaseServer {
       schema: this.source.schema
     });
 
-    const context: JSONAPIContext = { source: this.source, serializer };
+    const context = { source: this.source, serializer };
 
-    this.routeHandlers(
-      serializer,
-      (prefix, routes) => {
-        fastify.register(
-          (fastify, _, next) => {
-            for (let route of routes) {
-              fastify.route(toRouteOptions(route, context));
-            }
-            next();
-          },
-          { prefix }
-        );
-      },
-      config.readonly
-    );
+    fastify.register((fastify, _, next) => {
+      this.routeHandlers(
+        serializer,
+        (prefix, routes) => {
+          fastify.register(
+            (fastify, _, next) => {
+              for (let route of routes) {
+                fastify.route(toRouteOptions(route, context));
+              }
+              next();
+            },
+            { prefix }
+          );
+        },
+        config.readonly
+      );
 
-    fastify.setErrorHandler(async (error, _, reply) => {
-      const [status, body] = await this.errorHandler(error);
-      reply.status(status);
-      return body;
+      fastify.setErrorHandler(async (error, _, reply) => {
+        const [status, body] = await this.errorHandler(error);
+        reply.status(status);
+        return body;
+      });
+
+      next();
     });
   }
 
@@ -121,10 +109,10 @@ export default class FastifyServer extends BaseServer {
       config = this.graphql;
     }
 
-    const context: GraphQLContext = { source: this.source };
+    const context = { source: this.source };
 
     const server = new ApolloServer({
-      schema: this.graphQLSchema(),
+      schema: this.makeGraphQLSchema(),
       context({ req }) {
         return { ...context, headers: req.headers };
       },
@@ -133,17 +121,17 @@ export default class FastifyServer extends BaseServer {
     fastify.register(server.createHandler());
   }
 
-  private registerPubSub(fastify: FastifyInstance) {
-    this.setupPubSub();
+  private async setupSource(fastify: FastifyInstance) {
+    const listener = await this.activateSource();
 
     fastify.addHook('onClose', (_, done) => {
-      this.onClose().then(done);
+      this.deactivateSource(listener).then(done);
     });
   }
 }
 
 function toRouteOptions(
-  { url, method, params, handler }: RouteHandler,
+  { url, method, params, handler }: RouteDefinition,
   context: JSONAPIContext
 ): RouteOptions<Server, IncomingMessage, OutgoingMessage> {
   return {

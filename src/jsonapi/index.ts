@@ -111,7 +111,7 @@ export type Handler = (
   JSONAPIResponse<ResourceDocument | ResourceOperationsResponseDocument | null>
 >;
 
-export interface RouteHandler {
+export interface RouteDefinition {
   method: HTTPMethods;
   url: string;
   params: { type: string; relationship?: string };
@@ -126,7 +126,7 @@ export interface RouteHandlersArgs {
 
 export function routeHandlers(
   args: RouteHandlersArgs,
-  callback: (prefix: string, routes: RouteHandler[]) => void
+  callback: (prefix: string, routes: RouteDefinition[]) => void
 ): void {
   for (let type in args.schema.models) {
     const prefix = args.serializer.resourceType(type);
@@ -170,8 +170,11 @@ export async function errorHandler(
   return [code, { errors: [{ id, title, detail, code }] }];
 }
 
-function resourceRoutes(args: RouteHandlersArgs, type: string): RouteHandler[] {
-  const routes: RouteHandler[] = [
+function resourceRoutes(
+  args: RouteHandlersArgs,
+  type: string
+): RouteDefinition[] {
+  const routes: RouteDefinition[] = [
     {
       method: HTTPMethods.Get,
       url: '/',
