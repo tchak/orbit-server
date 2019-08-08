@@ -1,6 +1,6 @@
 {
   "name": "@orbit-server/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "description": "A server interface for Orbit.",
@@ -13,11 +13,11 @@
   "repository": "https://github.com/tchak/orbit-server",
   "license": "MIT",
   "dependencies": {
-    "orbit-graphql-schema": "^0.1.1",
     "@orbit/data": "^0.16.0",
     "@orbit/jsonapi": "^0.16.0",
     "apollo-server": "^2.8.1",
-    "graphql-subscriptions": "^1.1.0"
+    "graphql-subscriptions": "^1.1.0",
+    "orbit-graphql-schema": "^0.1.1"
   },
   "scripts": {
     "build": "rm -rf ./dist && tsc",
