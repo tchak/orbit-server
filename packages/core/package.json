@@ -1,0 +1,46 @@
+{
+  "name": "@orbit-server/core",
+  "version": "0.1.0",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "description": "A server interface for Orbit.",
+  "contributors": [
+    "Paul Chavard <github@paul.chavard.net>"
+  ],
+  "keywords": [
+    "orbit"
+  ],
+  "repository": "https://github.com/tchak/orbit-server",
+  "license": "MIT",
+  "dependencies": {
+    "orbit-graphql-schema": "^0.1.1",
+    "@orbit/data": "^0.16.0",
+    "@orbit/jsonapi": "^0.16.0",
+    "apollo-server": "^2.8.1",
+    "graphql-subscriptions": "^1.1.0"
+  },
+  "scripts": {
+    "build": "rm -rf ./dist && tsc",
+    "test": "qunit --require ts-node/register 'test/**/*-test.ts'",
+    "lint": "eslint . --ext .ts",
+    "prepare": "yarn build",
+    "release": "release-it"
+  },
+  "devDependencies": {
+    "@orbit/memory": "^0.16.0",
+    "eslint": "^6.1.0",
+    "qunit": "^2.9.2",
+    "release-it": "^12.3.4",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "release-it": {
+    "github": {
+      "release": false
+    }
+  }
+}

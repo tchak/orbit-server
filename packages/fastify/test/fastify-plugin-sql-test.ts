@@ -1,10 +1,10 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import { PubSub } from 'graphql-subscriptions';
+import SQLSource from 'orbit-sql';
 
 import schema from './support/test-schema';
 import tests, { Subject } from './support/fastify-plugin-shared';
 import Server from '../src';
-import SQLSource from '../src/sql';
 
 let fastify: FastifyInstance;
 let source: SQLSource;

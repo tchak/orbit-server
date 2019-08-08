@@ -2,6 +2,7 @@ docs
 node_modules
 test
 tmp
+dist/test
 *.log
 *.DS_Store
 *.editorconfig

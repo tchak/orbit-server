@@ -229,7 +229,7 @@ export default function(subject: Subject, sourceName: string) {
     });
 
     test('operations', async function(assert) {
-      if (sourceName === 'jsonapi') {
+      if (sourceName == 'jsonapi') {
         assert.ok(true);
         return;
       }
@@ -600,7 +600,7 @@ function operationsWithEarthAndMars(
 
   return request(fastify, {
     method: 'PATCH',
-    url: '/operations',
+    url: '/batch',
     payload: {
       operations: [
         {
@@ -713,7 +713,7 @@ function createTag(fastify: FastifyInstance) {
 function createTags(fastify: FastifyInstance) {
   return request(fastify, {
     method: 'PATCH',
-    url: '/operations',
+    url: '/batch',
     payload: {
       operations: [
         {

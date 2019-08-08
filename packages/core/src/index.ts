@@ -5,19 +5,25 @@ import {
   Transform
 } from '@orbit/data';
 import { JSONAPISerializer, JSONAPISerializerSettings } from '@orbit/jsonapi';
-import { Config as GraphQLConfig } from 'apollo-server-fastify';
+import { Config as GraphQLConfig } from 'apollo-server';
 import { PubSubEngine } from 'graphql-subscriptions';
+import {
+  makeExecutableSchema,
+  Context as GraphQLContext
+} from 'orbit-graphql-schema';
 
 import {
-  routeHandlers,
-  errorHandler,
-  RouteDefinition,
-  Context as JSONAPIContext,
-  QueryableAndUpdatableSource
-} from '../jsonapi';
-import { makeExecutableSchema, Context as GraphQLContext } from '../graphql';
+  processRequest,
+  processBatchRequest,
+  onError,
+  Request
+} from './handlers';
 
-export { RouteDefinition, JSONAPIContext, GraphQLContext };
+import { Context as JSONAPIContext, Source } from './types';
+
+export * from './handlers';
+
+export { Source, JSONAPIContext, GraphQLContext };
 
 export interface Inflections {
   plurals: Record<string, string>;
@@ -39,21 +45,24 @@ export interface JSONAPIConfig {
 export { GraphQLConfig };
 
 export interface ServerSettings {
-  source: QueryableAndUpdatableSource;
+  source: Source;
   pubsub?: PubSubEngine;
   inflections?: boolean;
   schema?: boolean | string;
   jsonapi?: boolean | JSONAPIConfig;
   graphql?: boolean | GraphQLConfig;
+  readonly?: boolean;
 }
 
-export default class OrbitServer {
-  protected source: QueryableAndUpdatableSource;
+export class Server {
+  protected source: Source;
+  protected serializer: JSONAPISerializer;
   protected pubsub?: PubSubEngine;
   protected inflections?: boolean;
   protected schema?: boolean | string;
   protected jsonapi?: boolean | JSONAPIConfig;
   protected graphql?: boolean | GraphQLConfig;
+  protected readonly?: boolean;
 
   constructor(settings: ServerSettings) {
     this.source = settings.source;
@@ -62,25 +71,35 @@ export default class OrbitServer {
     this.schema = settings.schema;
     this.jsonapi = settings.jsonapi;
     this.graphql = settings.graphql;
+    this.readonly = settings.readonly;
+
+    let config: JSONAPIConfig = {};
+    if (typeof this.jsonapi === 'object') {
+      config = this.jsonapi;
+    }
+
+    const SerializerClass = config.SerializerClass || JSONAPISerializer;
+    this.serializer = new SerializerClass({
+      schema: this.source.schema
+    });
   }
 
-  routeHandlers(
-    serializer: JSONAPISerializer,
-    callback: (prefix: string, routes: RouteDefinition[]) => void,
-    readonly: boolean = false
-  ): void {
-    routeHandlers(
-      {
-        schema: this.source.schema,
-        serializer,
-        readonly
-      },
-      callback
-    );
+  processRequest(request: Request) {
+    return processRequest(request, {
+      source: this.source,
+      serializer: this.serializer
+    });
   }
 
-  errorHandler(error: Error) {
-    return errorHandler(this.source, error);
+  processBatchRequest(request: Request) {
+    return processBatchRequest(request, {
+      source: this.source,
+      serializer: this.serializer
+    });
+  }
+
+  onError(error: Error) {
+    return onError(this.source, error);
   }
 
   makeGraphQLSchema() {
@@ -95,9 +114,7 @@ export default class OrbitServer {
     return schema;
   }
 
-  async activateSource(): Promise<
-    ((transform: Transform) => void) | undefined
-  > {
+  async activate(): Promise<((transform: Transform) => void) | undefined> {
     await this.source.activated;
 
     if (this.pubsub) {
@@ -117,7 +134,7 @@ export default class OrbitServer {
     return undefined;
   }
 
-  deactivateSource(listener: ((transform: Transform) => void) | undefined) {
+  deactivate(listener?: (transform: Transform) => void) {
     if (listener) {
       this.source.off('transform', listener);
     }

@@ -1,0 +1,59 @@
+{
+  "name": "@orbit-server/fastify",
+  "version": "0.7.1",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "description": "A fastify server interface for Orbit.",
+  "contributors": [
+    "Paul Chavard <github@paul.chavard.net>"
+  ],
+  "keywords": [
+    "orbit",
+    "fastify"
+  ],
+  "repository": "https://github.com/tchak/orbit-server",
+  "license": "MIT",
+  "dependencies": {
+    "@orbit-server/core": "^0.1.0",
+    "apollo-server-fastify": "^2.8.1",
+    "fastify": "^2.7.1",
+    "fastify-cors": "^2.1.3",
+    "fastify-favicon": "^2.0.0",
+    "fastify-helmet": "^3.0.1",
+    "fastify-plugin": "^1.6.0",
+    "graphql": "^14.4.2",
+    "qs": "^6.7.0"
+  },
+  "scripts": {
+    "build": "rm -rf ./dist && tsc",
+    "test": "qunit --require ts-node/register 'test/**/*-test.ts'",
+    "lint": "eslint . --ext .ts",
+    "prepare": "yarn build",
+    "release": "release-it"
+  },
+  "devDependencies": {
+    "@orbit/memory": "^0.16.0",
+    "@types/fastify-favicon": "^0.3.0",
+    "@types/mongodb": "^3.1.32",
+    "@types/node-fetch": "^2.5.0",
+    "@types/qs": "^6.5.3",
+    "eslint": "^6.1.0",
+    "node-fetch": "^2.6.0",
+    "orbit-mongo": "^0.1.1",
+    "orbit-sql": "^0.1.1",
+    "qunit": "^2.9.2",
+    "release-it": "^12.3.4",
+    "sqlite3": "^4.0.9",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "release-it": {
+    "github": {
+      "release": false
+    }
+  }
+}

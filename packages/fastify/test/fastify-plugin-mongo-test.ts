@@ -1,10 +1,10 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import { PubSub } from 'graphql-subscriptions';
+import MongoSource from 'orbit-mongo';
 
 import schema from './support/test-schema';
 import tests, { Subject } from './support/fastify-plugin-shared';
 import Server from '../src';
-import MongoSource from '../src/mongo';
 
 let fastify: FastifyInstance;
 let source: MongoSource;
