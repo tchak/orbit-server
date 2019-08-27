@@ -33,7 +33,6 @@ QUnit.module('Orbit Fastify Plugin (sql)', function(hooks) {
     subject.fastify = fastify;
   });
 
-  // @ts-ignore
   hooks.afterEach(async () => {
     await fastify.close();
   });

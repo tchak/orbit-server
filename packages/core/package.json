@@ -13,11 +13,11 @@
   "repository": "https://github.com/tchak/orbit-server",
   "license": "MIT",
   "dependencies": {
-    "@orbit/data": "^0.16.0",
-    "@orbit/jsonapi": "^0.16.0",
-    "apollo-server": "^2.8.1",
+    "@orbit/data": "^0.16.1",
+    "@orbit/jsonapi": "^0.16.1",
+    "apollo-server": "^2.9.0",
     "graphql-subscriptions": "^1.1.0",
-    "orbit-graphql-schema": "^0.1.1"
+    "orbit-graphql-schema": "^0.1.2"
   },
   "scripts": {
     "build": "rm -rf ./dist && tsc",
@@ -27,10 +27,10 @@
     "release": "release-it"
   },
   "devDependencies": {
-    "@orbit/memory": "^0.16.0",
-    "eslint": "^6.1.0",
+    "@orbit/memory": "^0.16.1",
+    "eslint": "^6.2.2",
     "qunit": "^2.9.2",
-    "release-it": "^12.3.4",
+    "release-it": "^12.3.5",
     "ts-node": "^8.3.0",
     "typescript": "^3.5.3"
   },
