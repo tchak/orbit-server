@@ -29,8 +29,7 @@
     "clean": "rm -rf ./dist",
     "test": "qunit --require ts-node/register 'test/**/*-test.ts'",
     "lint": "eslint . --ext .ts",
-    "prepare": "yarn build",
-    "release": "release-it"
+    "prepare": "yarn build"
   },
   "devDependencies": {
     "@orbit/memory": "^0.16.1",
@@ -41,7 +40,6 @@
     "node-fetch": "^2.6.0",
     "orbit-sql": "^0.1.2",
     "qunit": "^2.9.2",
-    "release-it": "^12.3.5",
     "sqlite3": "^4.1.0",
     "ts-node": "^8.3.0",
     "typescript": "^3.5.3"
@@ -49,10 +47,5 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
-  },
-  "release-it": {
-    "github": {
-      "release": false
-    }
   }
 }
