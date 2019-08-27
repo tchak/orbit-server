@@ -16,6 +16,7 @@ export default function(subject: Subject, sourceName: string) {
       const response = await getPlanets(subject.fastify as FastifyInstance);
 
       assert.equal(response.status, 200);
+      // assert.equal(response.headers['content-type'], 'application/vnd.api+json; charset=utf-8');
       assert.deepEqual(response.body, { data: [] });
     });
 
@@ -509,6 +510,13 @@ export default function(subject: Subject, sourceName: string) {
 }
 
 async function request(fastify: FastifyInstance, options: HTTPInjectOptions) {
+  if (options.url !== '/graphql') {
+    options.headers = options.headers || {};
+    options.headers['accept'] = 'application/vnd.api+json';
+    if (options.method === 'POST' || options.method === 'PUT') {
+      options.headers['content-type'] = 'application/vnd.api+json';
+    }
+  }
   const response = await fastify.inject(options);
 
   return {

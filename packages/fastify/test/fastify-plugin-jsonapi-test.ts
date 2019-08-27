@@ -37,8 +37,7 @@ QUnit.module('Orbit Fastify Plugin (jsonapi)', function(hooks) {
     fastify = Fastify();
     source = new JSONAPISource({
       schema,
-      host,
-      defaultFetchSettings: { headers: { 'Content-Type': 'application/json' } }
+      host
     });
     fastify.register(
       new Server({

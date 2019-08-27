@@ -94,6 +94,18 @@ export default class Server extends BaseServer {
 
   private registerJSONAPI(fastify: FastifyInstance) {
     fastify.register((fastify, _, next) => {
+      fastify.addContentTypeParser(
+        'application/vnd.api+json',
+        { parseAs: 'string' },
+        function(_, body, done) {
+          try {
+            done(null, JSON.parse(body));
+          } catch (err) {
+            err.statusCode = 400;
+            done(err, undefined);
+          }
+        }
+      );
       fastify.addHook('preSerialization', async (_, reply, payload) => {
         const [status, responseHeaders, responseBody] = payload;
         reply.status(status);

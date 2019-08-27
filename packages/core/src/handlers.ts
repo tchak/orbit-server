@@ -93,7 +93,13 @@ export async function onError(source: Source, error: Error): Promise<Response> {
     code = Status.BadRequest;
   }
 
-  return [code, {}, { errors: [{ id, title, detail, code }] }];
+  return [
+    code,
+    {
+      ['Content-Type']: 'application/vnd.api+json; charset=utf-8'
+    },
+    { errors: [{ id, title, detail, code }] }
+  ];
 }
 
 export async function addRecord(
@@ -115,7 +121,8 @@ export async function addRecord(
   return [
     Status.Created,
     {
-      location: `${request.url}/${record.id}`
+      location: `${request.url}/${record.id}`,
+      ['Content-Type']: 'application/vnd.api+json; charset=utf-8'
     },
     serializer.serialize({ data: record })
   ];
@@ -163,7 +170,13 @@ export async function findRecord(
       [source.name]: request.options
     }
   );
-  return [Status.Ok, {}, serializer.serialize({ data: record })];
+  return [
+    Status.Ok,
+    {
+      ['Content-Type']: 'application/vnd.api+json; charset=utf-8'
+    },
+    serializer.serialize({ data: record })
+  ];
 }
 
 export async function findRecords(
@@ -181,7 +194,13 @@ export async function findRecords(
       [source.name]: request.options
     }
   );
-  return [Status.Ok, {}, serializer.serialize({ data: records })];
+  return [
+    Status.Ok,
+    {
+      ['Content-Type']: 'application/vnd.api+json; charset=utf-8'
+    },
+    serializer.serialize({ data: records })
+  ];
 }
 
 export async function findRelatedRecords(
@@ -205,7 +224,13 @@ export async function findRelatedRecords(
       [source.name]: request.options
     }
   );
-  return [Status.Ok, {}, serializer.serialize({ data: records })];
+  return [
+    Status.Ok,
+    {
+      ['Content-Type']: 'application/vnd.api+json; charset=utf-8'
+    },
+    serializer.serialize({ data: records })
+  ];
 }
 
 export async function findRelatedRecord(
@@ -221,7 +246,13 @@ export async function findRelatedRecord(
       [source.name]: request.options
     }
   );
-  return [Status.Ok, {}, serializer.serialize({ data: record })];
+  return [
+    Status.Ok,
+    {
+      ['Content-Type']: 'application/vnd.api+json; charset=utf-8'
+    },
+    serializer.serialize({ data: record })
+  ];
 }
 
 export async function addToRelatedRecords(
@@ -368,7 +399,9 @@ export async function processBatchRequest(request: Request, context: Context) {
   );
   return [
     Status.Ok,
-    {},
+    {
+      ['Content-Type']: 'application/vnd.api+json; charset=utf-8'
+    },
     {
       operations: records.map(data => serializer.serialize({ data }))
     }
