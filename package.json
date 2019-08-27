@@ -19,8 +19,9 @@
   ],
   "scripts": {
     "postinstall": "lerna bootstrap",
+    "clean": "lerna run clean",
     "build": "lerna run build",
-    "test": "lerna run test",
+    "test": "lerna run build && lerna run test",
     "lint": "lerna run lint"
   }
 }
