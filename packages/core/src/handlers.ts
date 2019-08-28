@@ -113,8 +113,9 @@ export async function addRecord(
   const { data } = serializer.deserialize(request.document);
 
   const record: OrbitRecord = await source.update(
-    q => q.addRecord(data as OrbitRecord),
+    t => t.addRecord(data as OrbitRecord),
     {
+      from: 'jsonapi',
       [source.name]: request.options
     }
   );
@@ -138,7 +139,8 @@ export async function updateRecord(
   }
   const { data } = serializer.deserialize(request.document);
 
-  await source.update(q => q.updateRecord(data as OrbitRecord), {
+  await source.update(t => t.updateRecord(data as OrbitRecord), {
+    from: 'jsonapi',
     [source.name]: request.options
   });
   return [Status.NoContent, {}, null];
@@ -151,7 +153,8 @@ export async function removeRecord(
   const { id, type } = request.ref;
   const { source } = context;
 
-  await source.update(q => q.removeRecord({ id, type }), {
+  await source.update(t => t.removeRecord({ id, type }), {
+    from: 'jsonapi',
     [source.name]: request.options
   });
   return [Status.NoContent, {}, null];
@@ -167,6 +170,7 @@ export async function findRecord(
   const record: OrbitRecord = await source.query(
     q => q.findRecord({ type, id }),
     {
+      from: 'jsonapi',
       [source.name]: request.options
     }
   );
@@ -191,6 +195,7 @@ export async function findRecords(
     q =>
       queryBuilderParams(serializer, q.findRecords(type), type, filter, sort),
     {
+      from: 'jsonapi',
       [source.name]: request.options
     }
   );
@@ -221,6 +226,7 @@ export async function findRelatedRecords(
         sort
       ),
     {
+      from: 'jsonapi',
       [source.name]: request.options
     }
   );
@@ -243,6 +249,7 @@ export async function findRelatedRecord(
   const record: OrbitRecord = await source.query(
     q => q.findRelatedRecord({ type, id }, relationship),
     {
+      from: 'jsonapi',
       [source.name]: request.options
     }
   );
@@ -268,8 +275,9 @@ export async function addToRelatedRecords(
 
   for (let identity of data as RecordIdentity[]) {
     await source.update(
-      q => q.addToRelatedRecords({ id, type }, relationship, identity),
+      t => t.addToRelatedRecords({ id, type }, relationship, identity),
       {
+        from: 'jsonapi',
         [source.name]: request.options
       }
     );
@@ -290,8 +298,9 @@ export async function removeFromRelatedRecords(
 
   for (let identity of data as RecordIdentity[]) {
     await source.update(
-      q => q.removeFromRelatedRecords({ id, type }, relationship, identity),
+      t => t.removeFromRelatedRecords({ id, type }, relationship, identity),
       {
+        from: 'jsonapi',
         [source.name]: request.options
       }
     );
@@ -311,13 +320,14 @@ export async function replaceRelatedRecords(
   const { data } = serializer.deserialize(request.document);
 
   await source.update(
-    q =>
-      q.replaceRelatedRecords(
+    t =>
+      t.replaceRelatedRecords(
         { id, type },
         relationship as string,
         data as RecordIdentity[]
       ),
     {
+      from: 'jsonapi',
       [source.name]: request.options
     }
   );
@@ -336,13 +346,14 @@ export async function replaceRelatedRecord(
   const { data } = serializer.deserialize(request.document);
 
   await source.update(
-    q =>
-      q.replaceRelatedRecord(
+    t =>
+      t.replaceRelatedRecord(
         { id, type },
         relationship as string,
         data as RecordIdentity
       ),
     {
+      from: 'jsonapi',
       [source.name]: request.options
     }
   );
@@ -394,6 +405,7 @@ export async function processBatchRequest(request: Request, context: Context) {
 
   const records: OrbitRecord[] = toArray(
     await source.update(operations, {
+      from: 'jsonapi',
       [source.name]: request.options
     })
   );
