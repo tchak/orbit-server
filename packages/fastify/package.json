@@ -1,6 +1,6 @@
 {
   "name": "@orbit-server/fastify",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "description": "A fastify server interface for Orbit.",
@@ -14,7 +14,7 @@
   "repository": "https://github.com/tchak/orbit-server",
   "license": "MIT",
   "dependencies": {
-    "@orbit-server/core": "^0.2.0",
+    "@orbit-server/core": "^0.2.1",
     "apollo-server-fastify": "^2.9.0",
     "fastify": "^2.7.1",
     "fastify-cors": "^2.1.3",
