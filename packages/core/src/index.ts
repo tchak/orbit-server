@@ -21,6 +21,7 @@ import {
 
 import { Context as JSONAPIContext, Source } from './types';
 
+export * from './load-settings';
 export * from './handlers';
 
 export { Source, JSONAPIContext, GraphQLContext };
