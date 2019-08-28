@@ -64,6 +64,8 @@ export class Server {
   protected graphql?: boolean | GraphQLConfig;
   protected readonly?: boolean;
 
+  private _listener?: (transform: Transform) => void;
+
   constructor(settings: ServerSettings) {
     this.source = settings.source;
     this.pubsub = settings.pubsub;
@@ -114,7 +116,7 @@ export class Server {
     return schema;
   }
 
-  async activate(): Promise<((transform: Transform) => void) | undefined> {
+  async activate(): Promise<void> {
     await this.source.activated;
 
     if (this.pubsub) {
@@ -127,16 +129,13 @@ export class Server {
       }
 
       this.source.on('transform', listener);
-
-      return listener;
+      this._listener = listener;
     }
-
-    return undefined;
   }
 
-  deactivate(listener?: (transform: Transform) => void) {
-    if (listener) {
-      this.source.off('transform', listener);
+  deactivate() {
+    if (this._listener) {
+      this.source.off('transform', this._listener);
     }
     return this.source.deactivate();
   }

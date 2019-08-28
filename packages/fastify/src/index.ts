@@ -249,9 +249,8 @@ export default class Server extends BaseServer {
   }
 
   private async setupSource(fastify: FastifyInstance) {
-    const listener = await this.activate();
-
-    fastify.addHook('onClose', async () => this.deactivate(listener));
+    await this.activate();
+    fastify.addHook('onClose', async () => this.deactivate());
   }
 }
 
