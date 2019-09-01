@@ -100,6 +100,28 @@ export default function(subject: Subject, sourceName: string) {
       });
     });
 
+    test('update not found', async function(assert) {
+      if (sourceName == 'memory') {
+        assert.ok(true);
+        return;
+      }
+      const response = await request(subject.fastify as FastifyInstance, {
+        method: 'PATCH',
+        url: `/planets/123`,
+        payload: {
+          data: {
+            id: '123',
+            type: 'planets',
+            attributes: {
+              name: 'Earth 2'
+            }
+          }
+        }
+      });
+
+      assert.equal(response.status, 404);
+    });
+
     test('remove planet', async function(assert) {
       const { body } = await createEarth(subject.fastify as FastifyInstance);
       const id = body.data.id;
