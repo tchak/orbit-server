@@ -6,6 +6,7 @@ import {
 } from '@orbit/data';
 import { JSONAPISerializer, JSONAPISerializerSettings } from '@orbit/jsonapi';
 import { Config as GraphQLConfig } from 'apollo-server';
+import { GraphQLSchema } from 'graphql';
 import { PubSubEngine } from 'graphql-subscriptions';
 import {
   makeExecutableSchema,
@@ -104,7 +105,7 @@ export class Server {
     return onError(this.source, error);
   }
 
-  makeGraphQLSchema() {
+  makeGraphQLSchema(): GraphQLSchema {
     return makeExecutableSchema(this.source.schema);
   }
 
