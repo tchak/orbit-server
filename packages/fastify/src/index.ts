@@ -12,11 +12,10 @@ import {
   Server as BaseServer,
   GraphQLConfig,
   ServerSettings,
-  loadSettings,
   Ref
 } from '@orbit-server/core';
 
-export { ServerSettings, loadSettings };
+export { ServerSettings };
 
 export interface ServerRegistration {
   cors?: boolean;
