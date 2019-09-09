@@ -1,0 +1,25 @@
+name: CI
+on: [push]
+jobs:
+  run:
+    name: Run
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@master
+
+    - name: Set Node.js 12.x
+      uses: actions/setup-node@v1
+      with:
+        version: 12.x
+
+    - name: Install
+      run: yarn install
+
+    - name: Lint
+      run: yarn lint
+
+    - name: Test
+      run: yarn test
