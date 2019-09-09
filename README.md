@@ -1,4 +1,4 @@
-# Orbit Server ![Build Status](https://github.com/tchak/orbit-server/workflows/CI/badge.svg)
+# Orbit Server [![Build Status](https://github.com/tchak/orbit-server/workflows/CI/badge.svg)](https://github.com/tchak/orbit-server/actions)
 
 A server interface for Orbit sources
 
