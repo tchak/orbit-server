@@ -1,6 +1,10 @@
-# Orbit Server [![Build Status](https://travis-ci.com/tchak/orbit-server.svg?branch=master)](https://travis-ci.com/tchak/orbit-server)
+# Orbit Server ![Build Status](https://github.com/tchak/orbit-server/workflows/CI/badge.svg)
 
 A server interface for Orbit sources
+
+## Getting started
+
+A getting started template is available at [orbit-server-template](https://github.com/tchak/orbit-server-template)
 
 ## Installation
 
