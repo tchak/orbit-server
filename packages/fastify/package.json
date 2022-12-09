@@ -22,7 +22,7 @@
     "fastify-helmet": "^3.0.2",
     "fastify-plugin": "^1.6.0",
     "graphql": "^14.5.8",
-    "qs": "^6.9.1"
+    "qs": "^6.7.3"
   },
   "scripts": {
     "build": "rm -rf ./dist && tsc",
